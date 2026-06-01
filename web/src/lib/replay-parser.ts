@@ -94,3 +94,76 @@ export function computeWaveform(events: ReplayEvent[], numBuckets: number): numb
 
   return buckets.map((v) => Math.min(v / max, 1.0));
 }
+
+// Strip ANSI escape codes from terminal output
+function stripAnsi(str: string): string {
+  return str.replace(
+    // CSI sequences, OSC sequences, and other escape sequences
+    /\x1b\[[0-9;]*[a-zA-Z]|\x1b\][^\x07]*\x07|\x1b\(B|\x1b[>=]|[\x00-\x09\x0b-\x0c\x0e-\x1a]/g,
+    ""
+  );
+}
+
+export interface SearchIndex {
+  plainText: string
+  timeMap: number[]
+}
+
+export interface SearchResult {
+  time: number
+  context: string
+  matchStart: number
+}
+
+// Build a searchable text index from events
+export function buildSearchIndex(events: ReplayEvent[]): SearchIndex {
+  let plainText = "";
+  const timeMap: number[] = [];
+
+  for (const event of events) {
+    if (event.type === "o" && event.data) {
+      const clean = stripAnsi(event.data);
+      for (let i = 0; i < clean.length; i++) {
+        timeMap.push(event.time);
+      }
+      plainText += clean;
+    }
+  }
+
+  return { plainText, timeMap };
+}
+
+// Search the index for a query string
+export function searchIndex(
+  index: SearchIndex,
+  query: string
+): SearchResult[] {
+  if (!query || query.length === 0) return [];
+
+  const results: SearchResult[] = [];
+  const lowerText = index.plainText.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+
+  let pos = 0;
+  while (pos < lowerText.length) {
+    const found = lowerText.indexOf(lowerQuery, pos);
+    if (found === -1) break;
+
+    // Extract surrounding context (40 chars each side)
+    const contextStart = Math.max(0, found - 40);
+    const contextEnd = Math.min(index.plainText.length, found + query.length + 40);
+    let context = index.plainText.slice(contextStart, contextEnd).replace(/\r?\n/g, " ");
+    if (contextStart > 0) context = "..." + context;
+    if (contextEnd < index.plainText.length) context = context + "...";
+
+    results.push({
+      time: index.timeMap[found],
+      context,
+      matchStart: found - contextStart + (contextStart > 0 ? 3 : 0),
+    });
+
+    pos = found + query.length;
+  }
+
+  return results;
+}

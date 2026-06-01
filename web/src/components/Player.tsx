@@ -1,9 +1,10 @@
 "use client"
 
-import { parseReplay, computeWaveform, ReplaySession } from "@/lib/replay-parser"
+import { parseReplay, computeWaveform, buildSearchIndex, ReplaySession, SearchIndex } from "@/lib/replay-parser"
 import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import Terminal, { TerminalHandle } from "./Terminal"
 import Waveform from "./Waveform"
+import Search from "./Search"
 
 export const Player = () => {
   const [session, setSession] = useState<ReplaySession | null>(null)
@@ -140,71 +141,153 @@ export const Player = () => {
     () => (session ? computeWaveform(session.events, 150) : []),
     [session]
   )
+  const searchIdx = useMemo(
+    () => (session ? buildSearchIndex(session.events) : { plainText: "", timeMap: [] }),
+    [session]
+  )
 
-  if (!session) return <div>Loading...</div>
+  if (!session) return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#0d0d0d",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "#666",
+      fontSize: "16px",
+    }}>
+      Loading session...
+    </div>
+  )
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, "0")}`
+  }
 
   return (
-    <div style={{ padding: "20px", background: "#1a1a1a", minHeight: "100vh" }}>
-      <Terminal
-        ref={terminalRef}
-        width={session.header.width}
-        height={session.header.height}
-      />
+    <div style={{
+      minHeight: "100vh",
+      background: "#0d0d0d",
+      padding: "24px",
+      fontFamily: "'Inter', -apple-system, sans-serif",
+    }}>
+      <div style={{ maxWidth: "960px", margin: "0 auto" }}>
 
-      <div
-        style={{
+        {/* Header */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "16px",
+          padding: "12px 16px",
+          background: "#161616",
+          borderRadius: "8px",
+          border: "1px solid #222",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ color: "#3b82f6", fontWeight: "bold", fontSize: "18px" }}>
+              Replay
+            </span>
+            <span style={{ color: "#444", fontSize: "14px" }}>
+              {session.header.width}x{session.header.height}
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ color: "#666", fontSize: "13px" }}>
+              {session.header.shell}
+            </span>
+            <span style={{ color: "#666", fontSize: "13px" }}>
+              {formatTime(duration)}
+            </span>
+          </div>
+        </div>
+
+        {/* Terminal */}
+        <div style={{
+          background: "#000",
+          borderRadius: "8px",
+          border: "1px solid #222",
+          overflow: "hidden",
+          padding: "8px",
+        }}>
+          <Terminal
+            ref={terminalRef}
+            width={session.header.width}
+            height={session.header.height}
+          />
+        </div>
+
+        {/* Waveform */}
+        <div style={{ marginTop: "12px" }}>
+          <Waveform
+            bars={waveformBars}
+            currentTime={currentTime}
+            duration={duration}
+            onSeek={seekTo}
+          />
+        </div>
+
+        {/* Controls */}
+        <div style={{
           marginTop: "12px",
           display: "flex",
           alignItems: "center",
-          gap: "12px",
-        }}
-      >
-        <button
-          onClick={isPlaying ? pausePlayback : startPlayback}
-          style={{
-            padding: "8px 20px",
-            background: isPlaying ? "#ef4444" : "#22c55e",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontWeight: "bold",
-            fontSize: "14px",
-          }}
-        >
-          {isPlaying ? "Pause" : "Play"}
-        </button>
-
-        {[1, 2, 4, 8].map((s) => (
+          gap: "10px",
+          padding: "10px 16px",
+          background: "#161616",
+          borderRadius: "8px",
+          border: "1px solid #222",
+        }}>
           <button
-            key={s}
-            onClick={() => handleSpeedChange(s)}
+            onClick={isPlaying ? pausePlayback : startPlayback}
             style={{
-              padding: "6px 14px",
-              background: speed === s ? "#3b82f6" : "#333",
+              padding: "6px 18px",
+              background: isPlaying ? "#ef4444" : "#22c55e",
               color: "white",
-              border: speed === s ? "2px solid #60a5fa" : "2px solid transparent",
+              border: "none",
               borderRadius: "6px",
               cursor: "pointer",
+              fontWeight: "bold",
               fontSize: "13px",
             }}
           >
-            {s}x
+            {isPlaying ? "Pause" : "Play"}
           </button>
-        ))}
 
-        <span style={{ color: "#888", fontSize: "13px", marginLeft: "12px" }}>
-          {currentTime.toFixed(1)}s / {duration.toFixed(1)}s
-        </span>
-      </div>
+          <div style={{ display: "flex", gap: "4px" }}>
+            {[1, 2, 4, 8].map((s) => (
+              <button
+                key={s}
+                onClick={() => handleSpeedChange(s)}
+                style={{
+                  padding: "4px 12px",
+                  background: speed === s ? "#3b82f6" : "#262626",
+                  color: speed === s ? "white" : "#888",
+                  border: speed === s ? "1px solid #60a5fa" : "1px solid #333",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                }}
+              >
+                {s}x
+              </button>
+            ))}
+          </div>
 
-      <div style={{ marginTop: "8px" }}>
-        <Waveform
-          bars={waveformBars}
-          currentTime={currentTime}
-          duration={duration}
-          onSeek={seekTo}
-        />
+          <span style={{
+            color: "#888",
+            fontSize: "13px",
+            marginLeft: "auto",
+            fontFamily: "monospace",
+          }}>
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+        </div>
+
+        {/* Search */}
+        <Search index={searchIdx} onSeek={seekTo} />
       </div>
     </div>
   )

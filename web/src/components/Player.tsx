@@ -1,8 +1,9 @@
 "use client"
 
-import { parseReplay, ReplaySession } from "@/lib/replay-parser"
-import { useEffect, useRef, useState, useCallback } from "react"
+import { parseReplay, computeWaveform, ReplaySession } from "@/lib/replay-parser"
+import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import Terminal, { TerminalHandle } from "./Terminal"
+import Waveform from "./Waveform"
 
 export const Player = () => {
   const [session, setSession] = useState<ReplaySession | null>(null)
@@ -134,9 +135,13 @@ export const Player = () => {
     return () => cancelAnimationFrame(rafIdRef.current)
   }, [])
 
-  if (!session) return <div>Loading...</div>
+  const duration = session?.events[session.events.length - 1]?.time ?? 0
+  const waveformBars = useMemo(
+    () => (session ? computeWaveform(session.events, 150) : []),
+    [session]
+  )
 
-  const duration = session.events[session.events.length - 1]?.time ?? 0
+  if (!session) return <div>Loading...</div>
 
   return (
     <div style={{ padding: "20px", background: "#1a1a1a", minHeight: "100vh" }}>
@@ -194,18 +199,11 @@ export const Player = () => {
       </div>
 
       <div style={{ marginTop: "8px" }}>
-        <input
-          type="range"
-          min={0}
-          max={duration}
-          step={0.1}
-          value={currentTime}
-          onChange={(e) => seekTo(parseFloat(e.target.value))}
-          style={{
-            width: "100%",
-            cursor: "pointer",
-            accentColor: "#3b82f6",
-          }}
+        <Waveform
+          bars={waveformBars}
+          currentTime={currentTime}
+          duration={duration}
+          onSeek={seekTo}
         />
       </div>
     </div>

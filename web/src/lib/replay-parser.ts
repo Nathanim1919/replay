@@ -61,3 +61,36 @@ export function parseReplay(content: string): ReplaySession {
 
   return { header, events };
 }
+
+export function computeWaveform(events: ReplayEvent[], numBuckets: number): number[] {
+  if (events.length === 0) return new Array(numBuckets).fill(0);
+
+  // Find duration from last event
+  const duration = events[events.length - 1].time;
+  if (duration <= 0) return new Array(numBuckets).fill(0);
+
+  const bucketWidth = duration / numBuckets;
+  const buckets = new Array(numBuckets).fill(0);
+
+  // Count output bytes per bucket
+  for (const event of events) {
+    if (event.type === "o" && event.data) {
+      const index = Math.min(
+        Math.floor(event.time / bucketWidth),
+        numBuckets - 1
+      );
+      buckets[index] += event.data.length;
+    }
+  }
+
+  // Normalize to 0-1 range
+  // Use 95th percentile as max to prevent one huge burst
+  // from flattening everything else
+  const sorted = [...buckets].filter((v) => v > 0).sort((a, b) => a - b);
+  const max =
+    sorted.length > 0
+      ? sorted[Math.floor(sorted.length * 0.95)] || sorted[sorted.length - 1]
+      : 1;
+
+  return buckets.map((v) => Math.min(v / max, 1.0));
+}

@@ -248,9 +248,17 @@ func record(outputFile string) error {
 
 ### Checkpoint System (What Makes Seeking Fast)
 
+**Current state (v1):** The web player seeks by resetting xterm.js and replaying all events from time 0 to the target time. This works for sessions under ~10 minutes. For longer sessions, this becomes slow (replaying thousands of events takes visible time).
+
 **The problem with asciinema:** To seek to minute 5 of a 10-minute recording, you must replay all events from 0:00 to 5:00. For long sessions, this takes seconds — unacceptable for scrubbing.
 
 **Replay's solution: periodic terminal state snapshots.**
+
+**Implementation requirements (TODO — not yet implemented):**
+1. Go recorder: run a VT100 state machine alongside the PTY reader to track terminal state. Every 30 seconds, serialize the full state as a `"c"` checkpoint event.
+2. Checkpoint format: must capture exactly what xterm.js needs to restore — use xterm.js serialize addon to determine the minimum viable state.
+3. Web player: on seek, find nearest checkpoint before target time, restore terminal from checkpoint state, then replay only the events between checkpoint and target.
+4. Go recorder needs a VT100 emulator (headless) to compute checkpoint state — this is a significant implementation effort. Libraries: `github.com/creack/pty` gives raw bytes, but interpreting them into screen state requires a parser like `github.com/danielgatis/go-vte` or a custom implementation.
 
 ```
 Event Timeline:

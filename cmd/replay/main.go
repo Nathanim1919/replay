@@ -26,6 +26,16 @@ func main() {
 		}
 		fmt.Printf("Recording saved to %s\n", outputPath)
 		os.Exit(0)
+	case "play":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: replay play <file>")
+			os.Exit(1)
+		}
+		err := playRecording(os.Args[2])
+		if err != nil {
+			fmt.Printf("Error playing: %v\n", err)
+			os.Exit(1)
+		}
 	default:
 		fmt.Println("Unknown command. Usage: replay record <output_file>")
 	}

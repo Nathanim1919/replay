@@ -1025,25 +1025,32 @@ replay/
 
 **Build order: Frontend-first.** We build the web player before the Go recorder to get instant visual feedback, validate the `.replay` file format early, and catch UX issues before committing to a backend schema.
 
-### Phase 1: Web Player + File Format (Week 1)
-- [ ] Next.js app with xterm.js-based terminal player
-- [ ] `.replay` file parser in TypeScript
-- [ ] Playback engine: play, pause, speed control (0.5x-8x)
-- [ ] Checkpoint-based seeking (instant jump to any timestamp)
-- [ ] Interactive timeline scrubber with marker display
-- [ ] Activity waveform visualization
-- [ ] Search inside terminal output
-- [ ] Responsive dark-mode design
-- [ ] Hardcoded sample `.replay` data for development
+### Phase 1: Web Player + File Format + Core Recorder (Week 1) — COMPLETED
+- [x] Go format package: event types, header, JSON Lines writer/reader, round-trip test
+- [x] Go recorder: PTY proxy, raw mode, dual goroutine I/O, signal-safe teardown
+- [x] Go CLI: `replay record`, `replay play <file>` with speed control (1x-8x)
+- [x] TypeScript replay parser (port of Go format package)
+- [x] xterm.js Terminal component with forwardRef imperative API
+- [x] rAF wall-clock anchored playback engine (no timer drift)
+- [x] Play/pause, speed control (1x/2x/4x/8x) with mid-playback re-anchoring
+- [x] Seek via replay-from-zero (reset terminal, replay events to target time)
+- [x] Activity waveform visualization (output density per time bucket, 95th percentile normalization)
+- [x] Search inside terminal output (ANSI stripping, text index with timestamp mapping)
+- [x] Dark-mode polished UI (header bar, bordered terminal, controls, search)
 
-### Phase 2: Go CLI Recorder + DLP Engine (Week 2)
-- [ ] PTY spawning and bidirectional I/O forwarding
-- [ ] Event recording to `.replay` file format
-- [ ] Terminal state checkpoints every 30 seconds
+**What's NOT done from original Phase 1 plan:**
+- Checkpoint-based seeking (seek works via replay-from-zero, checkpoints needed for long sessions — see TODO in Checkpoint System section)
+- User markers during recording (Ctrl+\ to place bookmarks)
+- Embed mode for iframes
+
+### Phase 2: DLP Engine + Checkpoints + Recorder Hardening (Week 2) — NEXT
+- [ ] Inline DLP scrubbing middleware in recorder (trie + regex for `AKIA`, `eyJ`, `PASSWORD=`, etc.)
+- [ ] Terminal state checkpoints every 30 seconds (requires Go VT100 state machine)
+- [ ] Checkpoint-based seeking in web player (find nearest checkpoint, replay delta)
 - [ ] User markers via Ctrl+\ during recording
-- [ ] Inline DLP scrubbing middleware (trie + regex pattern matching for secrets like `AKIA`, `eyJ`, `PASSWORD=`)
-- [ ] Local terminal player with speed control
-- [ ] Basic CLI: `replay record`, `replay play <file>`
+- [ ] SIGWINCH handler for terminal resize propagation during recording
+- [ ] `--no-input` flag to skip recording keystrokes
+- [ ] `replay scrub <file> --pattern <regex>` post-recording redaction
 - [ ] Integration test: record a session, play it back in both terminal and web player
 
 ### Phase 3: Backend API + Process Telemetry + Sharing (Week 3)
@@ -1051,11 +1058,11 @@ replay/
 - [ ] PostgreSQL for session metadata, S3/R2 for blob storage
 - [ ] Process tree contextualization: CWD, PID, memory/CPU snapshots as `p`-type events (via `gopsutil`)
 - [ ] Web player sidebar displaying synced OS telemetry
-- [ ] Short URL generation (replay.sh/s/abc123)
+- [ ] Short URL generation (replay.sh/s/abc123) — anonymous upload, unguessable URL, no auth required
 - [ ] Privacy controls (private/unlisted/public)
 - [ ] Embed mode for iframes
 - [ ] CLI upload: `replay upload <file>`
-- [ ] User auth (JWT)
+- [ ] User auth (JWT) — layered on top of anonymous sharing for dashboard + private recordings
 - [ ] Docker Compose for self-hosting
 
 ### Phase 4: AI Pipeline + Session Forking + Polish (Week 4)
@@ -1068,6 +1075,7 @@ replay/
 - [ ] Asciinema `.cast` import
 - [ ] Skip-idle mode in player
 - [ ] CLI polish + comprehensive help text
+- [ ] Landing page (embedded live replay demo, install command, feature comparison with asciinema)
 
 ---
 

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func playRecording(filePath string) error {
+func playRecording(filePath string, speed float64) error {
 	// open reader
 	reader, err := format.NewReplayReader(filePath)
 	if err != nil {
@@ -36,7 +36,7 @@ func playRecording(filePath string) error {
 		}
 
 		// wait the time gap since last event
-		delay := event.Time - lastTime
+		delay := (event.Time - lastTime) / speed
 		if delay > 0 {
 			time.Sleep(time.Duration(delay * float64(time.Second)))
 		}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Nathanim1919/replay/internal/recorder"
 	"os"
+	"strconv"
 )
 
 func main() {
@@ -31,7 +32,14 @@ func main() {
 			fmt.Println("Usage: replay play <file>")
 			os.Exit(1)
 		}
-		err := playRecording(os.Args[2])
+		speed := 1.0
+		if len(os.Args) >= 4 {
+			parsed, err := strconv.ParseFloat(os.Args[3], 64)
+			if err == nil {
+				speed = parsed
+			}
+		}
+		err := playRecording(os.Args[2], speed)
 		if err != nil {
 			fmt.Printf("Error playing: %v\n", err)
 			os.Exit(1)

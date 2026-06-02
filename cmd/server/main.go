@@ -20,8 +20,8 @@ func main() {
 		os.Exit(1)
 	}
 	svr := server.NewServer(sessionStore, blobStore)
-	fmt.Println("Server started on port 3000")
-	err = http.ListenAndServe(":3000", svr.Router())
+	fmt.Println("Server started on port 8080")
+	err = http.ListenAndServe(":8080", svr.Router())
 	if err != nil {
 		fmt.Println("Error starting server:", err)
 		os.Exit(1)

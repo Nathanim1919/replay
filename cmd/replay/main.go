@@ -28,7 +28,7 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Printf("Recording saved to %s\n", outputPath)
-		url, err := client.Upload("http://localhost:3000", outputPath)
+		url, err := client.Upload("http://localhost:8080", outputPath)
 		if err != nil {
 			fmt.Printf("Upload failed: %v (file saved locally)\n", err)
 		} else {
@@ -57,7 +57,7 @@ func main() {
 			fmt.Println("Usage: replay upload <file>")
 			os.Exit(1)
 		}
-		url, err := client.Upload("http://localhost:3000", os.Args[2])
+		url, err := client.Upload("http://localhost:8080", os.Args[2])
 		if err != nil {
 			fmt.Printf("Error uploading: %v\n", err)
 			os.Exit(1)

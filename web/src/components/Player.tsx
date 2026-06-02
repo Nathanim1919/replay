@@ -6,8 +6,11 @@ import Terminal, { TerminalHandle } from "./Terminal"
 import Waveform from "./Waveform"
 import Search from "./Search"
 
-export const Player = () => {
-  const [session, setSession] = useState<ReplaySession | null>(null)
+interface PlayerProps {
+  content: string
+}
+
+export const Player = ({ content }: PlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false)
   const [speed, setSpeed] = useState(1.0)
   const [currentTime, setCurrentTime] = useState(0)
@@ -18,18 +21,9 @@ export const Player = () => {
   const eventIndexRef = useRef<number>(0)
   const rafIdRef = useRef<number>(0)
   const speedRef = useRef<number>(1.0)
-  const sessionRef = useRef<ReplaySession | null>(null)
-
-  // Load the replay file
-  useEffect(() => {
-    fetch("/test.replay")
-      .then((res) => res.text())
-      .then((text) => {
-        const parsed = parseReplay(text)
-        setSession(parsed)
-        sessionRef.current = parsed
-      })
-  }, [])
+  const session = useMemo(() => parseReplay(content), [content])
+  const sessionRef = useRef<ReplaySession>(session)
+  sessionRef.current = session
 
   // Keep speedRef in sync with speed state
   useEffect(() => {
@@ -136,28 +130,14 @@ export const Player = () => {
     return () => cancelAnimationFrame(rafIdRef.current)
   }, [])
 
-  const duration = session?.events[session.events.length - 1]?.time ?? 0
+  const duration = session.events[session.events.length - 1]?.time ?? 0
   const waveformBars = useMemo(
-    () => (session ? computeWaveform(session.events, 150) : []),
+    () => computeWaveform(session.events, 150),
     [session]
   )
   const searchIdx = useMemo(
-    () => (session ? buildSearchIndex(session.events) : { plainText: "", timeMap: [] }),
+    () => buildSearchIndex(session.events),
     [session]
-  )
-
-  if (!session) return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#0d0d0d",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      color: "#666",
-      fontSize: "16px",
-    }}>
-      Loading session...
-    </div>
   )
 
   const formatTime = (s: number) => {

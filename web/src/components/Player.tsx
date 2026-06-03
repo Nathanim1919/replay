@@ -8,13 +8,13 @@ import Search from "./Search"
 
 interface PlayerProps {
   content: string
+  demo?: boolean
 }
 
-export const Player = ({ content }: PlayerProps) => {
+export const Player = ({ content, demo = false }: PlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false)
   const [speed, setSpeed] = useState(1.0)
   const [currentTime, setCurrentTime] = useState(0)
-
   const terminalRef = useRef<TerminalHandle>(null)
   const anchorWallRef = useRef<number>(0)
   const anchorReplayRef = useRef<number>(0)
@@ -24,6 +24,8 @@ export const Player = ({ content }: PlayerProps) => {
   const session = useMemo(() => parseReplay(content), [content])
   const sessionRef = useRef<ReplaySession>(session)
   sessionRef.current = session
+  const demoRef = useRef(demo)
+  demoRef.current = demo
 
   // Keep speedRef in sync with speed state
   useEffect(() => {
@@ -54,7 +56,19 @@ export const Player = ({ content }: PlayerProps) => {
 
     // Check if done
     if (eventIndexRef.current >= session.events.length) {
-      setIsPlaying(false)
+      if (demoRef.current) {
+        // Loop: reset and restart after a brief pause
+        setTimeout(() => {
+          terminalRef.current?.reset()
+          eventIndexRef.current = 0
+          anchorWallRef.current = Date.now()
+          anchorReplayRef.current = 0
+          setCurrentTime(0)
+          rafIdRef.current = requestAnimationFrame(tick)
+        }, 2000)
+      } else {
+        setIsPlaying(false)
+      }
       return
     }
 
@@ -125,10 +139,17 @@ export const Player = ({ content }: PlayerProps) => {
     [isPlaying, currentTime, tick]
   )
 
-  // Cleanup on unmount
+  // Auto-play in demo mode
   useEffect(() => {
+    if (demo) {
+      anchorWallRef.current = Date.now()
+      anchorReplayRef.current = 0
+      eventIndexRef.current = 0
+      setIsPlaying(true)
+      rafIdRef.current = requestAnimationFrame(tick)
+    }
     return () => cancelAnimationFrame(rafIdRef.current)
-  }, [])
+  }, [demo, tick])
 
   const duration = session.events[session.events.length - 1]?.time ?? 0
   const waveformBars = useMemo(
@@ -146,12 +167,30 @@ export const Player = ({ content }: PlayerProps) => {
     return `${m}:${sec.toString().padStart(2, "0")}`
   }
 
+  if (demo) {
+    return (
+      <div style={{
+        background: "#000",
+        borderRadius: "8px",
+        border: "1px solid #222",
+        overflow: "hidden",
+        padding: "8px",
+      }}>
+        <Terminal
+          ref={terminalRef}
+          width={session.header.width}
+          height={session.header.height}
+        />
+      </div>
+    )
+  }
+
   return (
     <div style={{
       minHeight: "100vh",
       background: "#0d0d0d",
       padding: "24px",
-      fontFamily: "'Inter', -apple-system, sans-serif",
+      fontFamily: "'Manrope', -apple-system, sans-serif",
     }}>
       <div style={{ maxWidth: "960px", margin: "0 auto" }}>
 
@@ -255,6 +294,7 @@ export const Player = ({ content }: PlayerProps) => {
               </button>
             ))}
           </div>
+
 
           <span style={{
             color: "#888",

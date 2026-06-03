@@ -1,26 +1,113 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap");
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Match ThemeContext: dark: utilities follow data-theme, not OS preference */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* Dark theme */
+[data-theme="dark"] {
+    --bg-primary: #0d0d0d;
+    --bg-card: #131313;
+    --bg-elevated: #161616;
+    --bg-code: #0d0d0d;
+    --text-primary: #eee;
+    --text-secondary: rgba(255, 255, 255, 0.4);
+    --text-tertiary: rgba(255, 255, 255, 0.2);
+    --text-heading: rgba(255, 255, 255, 0.35);
+    --border: rgba(255, 255, 255, 0.06);
+    --border-strong: #222;
+    --accent: #3b82f6;
+    --accent-bg: rgba(59, 130, 246, 0.15);
+    --code-text: #22c55e;
+    --hero-overlay: #000;
+    --hero-overlay-base: rgba(0, 0, 0, 0.7);
+    --hero-headline: #f0f0f0;
+    --hero-headline-accent: #e8ddb5;
+    --hero-body: rgba(255, 255, 255, 0.6);
+    --hero-badge-text: rgba(255, 255, 255, 0.5);
+    --hero-badge-bg: rgba(255, 255, 255, 0.06);
+    --hero-tag-bg: #f5f5f0;
+    --hero-tag-text: #0a0a0a;
+    --copy-cmd-bg: rgba(255, 255, 255, 0.08);
+    --demo-panel-bg: rgba(51, 51, 51, 0.25);
+    --feature-icon-bg: rgba(255, 255, 255, 0.06);
+    --feature-icon-fg: rgba(255, 255, 255, 0.5);
+    --inline-cmd-bg: rgba(255, 255, 255, 0.05);
+    --inline-cmd-fg: rgba(255, 255, 255, 0.72);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Light theme */
+[data-theme="light"] {
+    --bg-primary: #ffffff;
+    --bg-card: #f5f5f5;
+    --bg-elevated: #eee;
+    --bg-code: #f0f0f0;
+    --text-primary: #1a1a1a;
+    --text-secondary: rgba(0, 0, 0, 0.5);
+    --text-tertiary: rgba(0, 0, 0, 0.3);
+    --text-heading: rgba(0, 0, 0, 0.45);
+    --border: rgba(0, 0, 0, 0.08);
+    --border-strong: #ddd;
+    --accent: #2563eb;
+    --accent-bg: rgba(37, 99, 235, 0.1);
+    --code-text: #16a34a;
+    --hero-overlay: #fff;
+    --hero-overlay-base: rgba(255, 255, 255, 0.7);
+    --hero-headline: #1a1a1a;
+    --hero-headline-accent: #4a3f1f;
+    --hero-body: rgba(0, 0, 0, 0.55);
+    --hero-badge-text: rgba(0, 0, 0, 0.5);
+    --hero-badge-bg: rgba(0, 0, 0, 0.05);
+    --hero-tag-bg: #141414;
+    --hero-tag-text: #f5f5f0;
+    --copy-cmd-bg: rgba(0, 0, 0, 0.05);
+    --demo-panel-bg: rgba(0, 0, 0, 0.06);
+    --feature-icon-bg: rgba(0, 0, 0, 0.05);
+    --feature-icon-fg: rgba(0, 0, 0, 0.45);
+    --inline-cmd-bg: #f3f4f6;
+    --inline-cmd-fg: #374151;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+    scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family:
+        "Manrope",
+        -apple-system,
+        sans-serif;
+    transition:
+        background 0.2s,
+        color 0.2s;
+}
+
+/* Hide xterm.js scrollbar */
+.hide-scrollbar .xterm-viewport {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.hide-scrollbar .xterm-viewport::-webkit-scrollbar {
+    display: none;
+}
+
+@keyframes step-icon-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.step-icon-spin {
+    animation: step-icon-spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .step-icon-spin {
+        animation: none;
+    }
 }

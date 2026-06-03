@@ -1,0 +1,1 @@
+- [Architectural Sounding Board Persona](feedback_no_code_persona.md) — No runnable code; 4-header response schema; principal engineer level only

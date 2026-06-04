@@ -16,19 +16,19 @@ import (
 // HTTP server
 
 type Server struct {
-	sessionStore SessionStore
+	sessionStore RecordingStore
 	blobStore    BlobStore
 }
 
-func NewServer(sessionStore SessionStore, blobStore BlobStore) *Server {
+func NewServer(sessionStore RecordingStore, blobStore BlobStore) *Server {
 	return &Server{sessionStore: sessionStore, blobStore: blobStore}
 }
 
 func (s *Server) Router() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/upload", s.handleUpload)
-	mux.HandleFunc("GET /api/sessions", s.handleListSession)
-	mux.HandleFunc("GET /api/sessions/{shortcode}", s.handleGetSession)
+	mux.HandleFunc("GET /api/recordings", s.handleListRecording)
+	mux.HandleFunc("GET /api/recordings/{shortcode}", s.handleGetRecording)
 	return mux
 }
 
@@ -69,10 +69,11 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		title = "Untitled"
 	}
 
-	err = s.sessionStore.SaveSession(&Session{
+	err = s.sessionStore.SaveRecording(&Recording{
 		ID:        uuid.New().String(),
 		Shortcode: shortcode,
 		Title:     title,
+		// UserID:    header.UserID, // Assuming UserID is part of the header
 		Duration:  header.Duration,
 		Width:     header.Width,
 		Height:    header.Height,
@@ -80,7 +81,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now(),
 	})
 	if err != nil {
-		http.Error(w, "Failed to save session", http.StatusInternalServerError)
+		http.Error(w, "Failed to save recording", http.StatusInternalServerError)
 		return
 	}
 
@@ -92,17 +93,17 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	})
 
 }
-func (s *Server) handleListSession(w http.ResponseWriter, r *http.Request) {
-	sessions, err := s.sessionStore.ListSessions()
+func (s *Server) handleListRecording(w http.ResponseWriter, r *http.Request) {
+	recordings, err := s.sessionStore.ListRecordings()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(sessions)
+	json.NewEncoder(w).Encode(recordings)
 }
-func (s *Server) handleGetSession(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleGetRecording(w http.ResponseWriter, r *http.Request) {
 	shortcode := r.PathValue("shortcode")
 	data, err := s.blobStore.GetFile(shortcode)
 	if err != nil {

@@ -2,13 +2,19 @@ package main
 
 import (
 	"fmt"
+	"github.com/Nathanim1919/replay/internal/server"
+	"github.com/joho/godotenv"
 	"net/http"
 	"os"
-
-	"github.com/Nathanim1919/replay/internal/server"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env file:", err)
+		os.Exit(1)
+	}
+	PORT := os.Getenv("PORT")
 	sessionStore, err := server.NewSQLiteStore("sessions.db")
 	if err != nil {
 		fmt.Println("Error creating session store:", err)
@@ -20,8 +26,8 @@ func main() {
 		os.Exit(1)
 	}
 	svr := server.NewServer(sessionStore, blobStore)
-	fmt.Println("Server started on port 8080")
-	err = http.ListenAndServe(":8080", svr.Router())
+	fmt.Println("Server started on port", PORT)
+	err = http.ListenAndServe(":" + PORT, svr.Router())
 	if err != nil {
 		fmt.Println("Error starting server:", err)
 		os.Exit(1)

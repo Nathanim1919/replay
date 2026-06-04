@@ -14,7 +14,7 @@ func NewSQLiteStore(path string) (*SQLiteStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = db.Exec(createSessionsTable)
+	_, err = db.Exec(createRecordingsTable)
 	if err != nil {
 		return nil, err
 	}
@@ -22,56 +22,67 @@ func NewSQLiteStore(path string) (*SQLiteStore, error) {
 }
 
 // Create table statements
-const createSessionsTable = `
-CREATE TABLE IF NOT EXISTS sessions (
-	id TEXT PRIMARY KEY,
-	shortcode TEXT UNIQUE NOT NULL,
-	title TEXT,
-	duration REAL,
-	width INTEGER,
-	height INTEGER,
-	shell TEXT,
-	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)`
+const createRecordingsTable = `
+		CREATE TABLE IF NOT EXISTS recordings (
+			id TEXT PRIMARY KEY,
+			shortcode TEXT UNIQUE NOT NULL,
+			title TEXT,
+			user_id TEXT,
+			duration REAL,
+			width INTEGER,
+			height INTEGER,
+			shell TEXT,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)
+`
 
-func (s *SQLiteStore) SaveSession(session *Session) error {
-	_, err := s.db.Exec("INSERT INTO sessions (id, shortcode, title, duration, width, height, shell, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", session.ID, session.Shortcode, session.Title, session.Duration, session.Width, session.Height, session.Shell, session.CreatedAt)
+const createUsersTable = `
+		CREATE TABLE IF NOT EXISTS users (
+			id TEXT PRIMARY KEY,
+			name TEXT,
+			email TEXT UNIQUE,
+			password TEXT
+		)
+`
+
+func (s *SQLiteStore) SaveRecording(recording *Recording) error {
+	_, err := s.db.Exec("INSERT INTO recordings (id, shortcode, title, user_id, duration, width, height, shell, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", recording.ID, recording.Shortcode, recording.Title, recording.UserID, recording.Duration, recording.Width, recording.Height, recording.Shell, recording.CreatedAt)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *SQLiteStore) ListSessions() ([]Session, error) {
-	rows, err := s.db.Query("SELECT id, shortcode, title, duration, width, height, shell, created_at FROM sessions")
+func (s *SQLiteStore) ListRecordings() ([]Recording, error) {
+	rows, err := s.db.Query("SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at FROM recordings")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var sessions []Session
+	var recordings []Recording
 	for rows.Next() {
-		var session Session
-		err := rows.Scan(&session.ID, &session.Shortcode, &session.Title, &session.Duration, &session.Width, &session.Height, &session.Shell, &session.CreatedAt)
+		var recording Recording
+		err := rows.Scan(&recording.ID, &recording.Shortcode, &recording.Title, &recording.UserID, &recording.Duration, &recording.Width, &recording.Height, &recording.Shell, &recording.CreatedAt)
 
 		if err != nil {
 			return nil, err
 		}
-		sessions = append(sessions, session)
+		recordings = append(recordings, recording)
 	}
-	return sessions, nil
+	return recordings, nil
 }
 
-func (s *SQLiteStore) GetSessionByShortcode(shortcode string) (*Session, error) {
-	row := s.db.QueryRow("SELECT id, shortcode, title, duration, width, height, shell, created_at FROM sessions WHERE shortcode = ?", shortcode)
+func (s *SQLiteStore) GetRecordingByShortcode(shortcode string) (*Recording, error) {
+	row := s.db.QueryRow("SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at FROM recordings WHERE shortcode = ?", shortcode)
 
-	var session Session
-	err := row.Scan(&session.ID, &session.Shortcode, &session.Title, &session.Duration, &session.Width, &session.Height, &session.Shell, &session.CreatedAt)
+	var recording Recording
+	err := row.Scan(&recording.ID, &recording.Shortcode, &recording.Title, &recording.UserID, &recording.Duration, &recording.Width, &recording.Height, &recording.Shell, &recording.CreatedAt)
 	if err == sql.ErrNoRows {
-		return nil, nil // No session found
+		return nil, nil // No recording found
 	}
 	if err != nil {
 		return nil, err // real error
 	}
-	return &session, nil // Success
+	return &recording, nil // Success
 }

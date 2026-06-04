@@ -2,9 +2,17 @@ package server
 
 import "time"
 
-type Session struct {
+type User struct {
+	ID       string `json:"id"`
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Password string `json:"-"` // Hashed password, not exposed in JSON
+}
+
+type Recording struct {
 	ID        string    `json:"id"`
 	Shortcode string    `json:"shortcode"`
+	UserID    string    `json:"user_id"`
 	Title     string    `json:"title"`
 	Duration  float64   `json:"duration"`
 	Width     int       `json:"width"`
@@ -13,11 +21,11 @@ type Session struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-type SessionStore interface {
-	SaveSession(session *Session) error
-	ListSessions() ([]Session, error)
-	GetSessionByShortcode(shortcode string) (*Session, error)
-	// GetSessionByID(id string) (*Session, error)
+type RecordingStore interface {
+	SaveRecording(recording *Recording) error
+	ListRecordings() ([]Recording, error)
+	GetRecordingByShortcode(shortcode string) (*Recording, error)
+	// GetRecordingByID(id string) (*Recording, error)
 }
 
 type BlobStore interface {

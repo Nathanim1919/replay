@@ -16,6 +16,20 @@ func main() {
 	}
 
 	switch os.Args[1] {
+	case "help":
+		fmt.Println("Usage:")
+		fmt.Println("  replay record [output_file] - Record a new session (default: recording.replay)")
+		fmt.Println("  replay play <file> [speed] - Play a recording (optional speed multiplier)")
+		fmt.Println("  replay upload <file> - Upload a recording to the server")
+		os.Exit(0)
+
+	case "version":
+		fmt.Println("Replay CLI version 1.0.0")
+		os.Exit(0)
+	
+	// case "login":
+		
+
 	case "record":
 		outputPath := "recording.replay"
 		if len(os.Args) >= 3 {

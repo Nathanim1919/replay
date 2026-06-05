@@ -8,7 +8,9 @@ import (
 	"strings"
 )
 
-func authMiddleware(next http.Handler) http.Handler {
+// exported function to be used as middleware in the server
+
+func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// get session id from cookie
 		fmt.Println("-> auth middleware called")

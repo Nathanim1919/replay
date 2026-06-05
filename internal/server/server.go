@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
-
+	"github.com/Nathanim1919/replay/internal/server/auth"
 	"github.com/Nathanim1919/replay/internal/format"
 	"github.com/google/uuid"
 )
@@ -18,10 +18,17 @@ import (
 type Server struct {
 	sessionStore RecordingStore
 	blobStore    BlobStore
+	authHandler  authHandler
 }
 
-func NewServer(sessionStore RecordingStore, blobStore BlobStore) *Server {
-	return &Server{sessionStore: sessionStore, blobStore: blobStore}
+type authHandler interface {
+	Register(http.ResponseWriter, *http.Request)
+	Login(http.ResponseWriter, *http.Request)
+	Me(http.ResponseWriter, *http.Request)
+}
+
+func NewServer(sessionStore RecordingStore, blobStore BlobStore, authHandler authHandler) *Server {
+	return &Server{sessionStore: sessionStore, blobStore: blobStore, authHandler: authHandler}
 }
 
 func (s *Server) Router() http.Handler {
@@ -29,6 +36,11 @@ func (s *Server) Router() http.Handler {
 	mux.HandleFunc("POST /api/upload", s.handleUpload)
 	mux.HandleFunc("GET /api/recordings", s.handleListRecording)
 	mux.HandleFunc("GET /api/recordings/{shortcode}", s.handleGetRecording)
+	mux.HandleFunc("/auth/register", s.authHandler.Register)
+	mux.HandleFunc("/auth/login", s.authHandler.Login)
+	mux.Handle("/auth/me",
+	auth.AuthMiddleware(http.HandlerFunc(s.authHandler.Me)),
+)
 	return mux
 }
 

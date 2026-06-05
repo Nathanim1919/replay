@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/Nathanim1919/replay/internal/server"
+	"github.com/Nathanim1919/replay/internal/domain"
 	"github.com/google/uuid"
 )
 
@@ -10,9 +10,9 @@ type Service struct {
 }
 
 type UserStore interface {
-	CreateUser(user *server.User) error
-	GetUserById(userId string) (*server.User, error)
-	GetUserByEmail(email string) (*server.User, error)
+	CreateUser(user *domain.User) error
+	GetUserById(userId string) (*domain.User, error)
+	GetUserByEmail(email string) (*domain.User, error)
 }
 
 var (
@@ -28,7 +28,7 @@ func (e Error) Error() string {
 }
 
 
-func (s *Service) RegisterUser(name, email, password string) (*server.User, error){
+func (s *Service) RegisterUser(name, email, password string) (*domain.User, error){
 	// Validate email is not taken yet
 	existing, err := s.Users.GetUserByEmail(email)
 	if err != nil {
@@ -47,7 +47,7 @@ func (s *Service) RegisterUser(name, email, password string) (*server.User, erro
 
 
 	// Create User in Db
-	user := &server.User{
+	user := &domain.User{
 		ID: uuid.New().String(),
 		Name: name,
 		Email: email,

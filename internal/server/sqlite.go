@@ -2,6 +2,8 @@ package server
 
 import (
 	"database/sql"
+	"errors"
+	"github.com/Nathanim1919/replay/internal/domain"
 	_ "modernc.org/sqlite" // Import sqlite driver
 )
 
@@ -15,6 +17,10 @@ func NewSQLiteStore(path string) (*SQLiteStore, error) {
 		return nil, err
 	}
 	_, err = db.Exec(createRecordingsTable)
+	if err != nil {
+		return nil, err
+	}
+	_, err = db.Exec(createUsersTable)
 	if err != nil {
 		return nil, err
 	}
@@ -85,4 +91,37 @@ func (s *SQLiteStore) GetRecordingByShortcode(shortcode string) (*Recording, err
 		return nil, err // real error
 	}
 	return &recording, nil // Success
+}
+
+func (s *SQLiteStore) CreateUser(user *domain.User) error {
+	_, err := s.db.Exec("INSERT INTO users (id, name, email, password) VALUES (?, ?, ?, ?)", user.ID, user.Name, user.Email, user.PasswordHash)
+	return err
+}
+
+func (s *SQLiteStore) GetUserById(userId string) (*domain.User, error) {
+	row := s.db.QueryRow("SELECT id, name, email, password FROM users WHERE id = ?", userId)
+
+	var user domain.User
+	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (s *SQLiteStore) GetUserByEmail(email string) (*domain.User, error) {
+	row := s.db.QueryRow("SELECT id, name, email, password FROM users WHERE email = ?", email)
+
+	var user domain.User
+	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

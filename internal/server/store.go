@@ -2,12 +2,12 @@ package server
 
 import "time"
 
-type User struct {
-	ID           string
-	Name         string
-	Email        string
-	PasswordHash string
-}
+// type User struct {
+// 	ID           string
+// 	Name         string
+// 	Email        string
+// 	PasswordHash string
+// }
 
 type Recording struct {
 	ID        string    `json:"id"`

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/Nathanim1919/replay/internal/server"
+	"github.com/Nathanim1919/replay/internal/server/auth"
 	"github.com/joho/godotenv"
 	"net/http"
 	"os"
@@ -25,7 +26,8 @@ func main() {
 		fmt.Println("Error creating blob store:", err)
 		os.Exit(1)
 	}
-	svr := server.NewServer(sessionStore, blobStore)
+	authHandler := &auth.Handler{Service: &auth.Service{Users: sessionStore}}
+	svr := server.NewServer(sessionStore, blobStore, authHandler)
 	fmt.Println("Server started on port", PORT)
 	err = http.ListenAndServe(":" + PORT, svr.Router())
 	if err != nil {

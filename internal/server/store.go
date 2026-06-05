@@ -3,10 +3,10 @@ package server
 import "time"
 
 type User struct {
-	ID       string `json:"id"`
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Password string `json:"-"` // Hashed password, not exposed in JSON
+	ID           string
+	Name         string
+	Email        string
+	PasswordHash string
 }
 
 type Recording struct {

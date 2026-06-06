@@ -8,8 +8,9 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
-	"github.com/Nathanim1919/replay/internal/server/auth"
+
 	"github.com/Nathanim1919/replay/internal/format"
+	"github.com/Nathanim1919/replay/internal/server/auth"
 	"github.com/google/uuid"
 )
 
@@ -25,12 +26,14 @@ type authHandler interface {
 	Register(http.ResponseWriter, *http.Request)
 	Login(http.ResponseWriter, *http.Request)
 	Me(http.ResponseWriter, *http.Request)
+	DeviceInit(http.ResponseWriter, *http.Request)
+	DevicePoll(http.ResponseWriter, *http.Request)
+	DeviceApprove(http.ResponseWriter, *http.Request)
 }
 
 func NewServer(sessionStore RecordingStore, blobStore BlobStore, authHandler authHandler) *Server {
 	return &Server{sessionStore: sessionStore, blobStore: blobStore, authHandler: authHandler}
 }
-
 
 // Example of custom CORSMiddleware function
 func cors(next http.Handler) http.Handler {
@@ -39,29 +42,34 @@ func cors(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		
+
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        
-        // Handle preflight requests
-        if r.Method == http.MethodOptions {
-            w.WriteHeader(http.StatusNoContent) // ✅ Explicitly return 204 for OPTIONS
-            return 
-        }
+
+		// Handle preflight requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent) // ✅ Explicitly return 204 for OPTIONS
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }
-
 
 func (s *Server) Router() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/upload", s.handleUpload)
 	mux.HandleFunc("GET /api/recordings", s.handleListRecording)
 	mux.HandleFunc("GET /api/recordings/{shortcode}", s.handleGetRecording)
+	mux.HandleFunc("POST /api/auth/device/init", s.authHandler.DeviceInit)
+	mux.HandleFunc("POST /api/auth/device/poll", s.authHandler.DevicePoll)
+	mux.HandleFunc("POST /api/auth/device/approve", s.authHandler.DeviceApprove)
+	mux.HandleFunc("POST /api/auth/register", s.authHandler.Register)
+	mux.HandleFunc("POST /api/auth/login", s.authHandler.Login)
+	mux.Handle("GET /api/auth/me", auth.AuthMiddleware(http.HandlerFunc(s.authHandler.Me)))
 	mux.HandleFunc("/auth/register", s.authHandler.Register)
 	mux.HandleFunc("/auth/login", s.authHandler.Login)
 	mux.Handle("/auth/me",
-	auth.AuthMiddleware(http.HandlerFunc(s.authHandler.Me)),
-)
+		auth.AuthMiddleware(http.HandlerFunc(s.authHandler.Me)),
+	)
 	return cors(mux)
 }
 

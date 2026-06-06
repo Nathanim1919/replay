@@ -2,25 +2,49 @@ package main
 
 import (
 	"fmt"
+	"github.com/Nathanim1919/replay/internal/format"
+	"io"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/Nathanim1919/replay/internal/client"
 	"github.com/Nathanim1919/replay/internal/recorder"
 )
 
 func main() {
-	if len(os.Args) < 2 {
+	args := os.Args[1:]
+	if len(args) > 0 && args[0] == "replay" {
+		args = args[1:]
+	}
+
+	if len(args) < 1 {
 		fmt.Println("Usage: replay record <output_file>")
 		os.Exit(1)
 	}
 
-	switch os.Args[1] {
+	switch args[0] {
 	case "help":
 		fmt.Println("Usage:")
 		fmt.Println("  replay record [output_file] - Record a new session (default: recording.replay)")
 		fmt.Println("  replay play <file> [speed] - Play a recording (optional speed multiplier)")
 		fmt.Println("  replay upload <file> - Upload a recording to the server")
+		os.Exit(0)
+
+	case "login":
+		resp, err := client.Login()
+		if err != nil {
+			fmt.Printf("Login failed: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("User code: %s\n", resp.UserCode)
+		fmt.Printf("Verify at: %s\n", resp.VerificationURI)
+		fmt.Println("Waiting for approval in the browser...")
+		if err := client.PollDeviceAuth("http://localhost:8080", resp.DeviceCode, resp.Interval, resp.ExpiresIn); err != nil {
+			fmt.Printf("Login failed: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("Login approved.")
 		os.Exit(0)
 
 	case "version":
@@ -32,8 +56,8 @@ func main() {
 
 	case "record":
 		outputPath := "recording.replay"
-		if len(os.Args) >= 3 {
-			outputPath = os.Args[2]
+		if len(args) >= 2 {
+			outputPath = args[1]
 		}
 		rec := recorder.NewRecorder()
 		err := rec.Start(outputPath)
@@ -50,28 +74,28 @@ func main() {
 		}
 		os.Exit(0)
 	case "play":
-		if len(os.Args) < 3 {
+		if len(args) < 2 {
 			fmt.Println("Usage: replay play <file>")
 			os.Exit(1)
 		}
 		speed := 1.0
-		if len(os.Args) >= 4 {
-			parsed, err := strconv.ParseFloat(os.Args[3], 64)
+		if len(args) >= 3 {
+			parsed, err := strconv.ParseFloat(args[2], 64)
 			if err == nil {
 				speed = parsed
 			}
 		}
-		err := playRecording(os.Args[2], speed)
+		err := playRecording(args[1], speed)
 		if err != nil {
 			fmt.Printf("Error playing: %v\n", err)
 			os.Exit(1)
 		}
 	case "upload":
-		if len(os.Args) < 3 {
+		if len(args) < 2 {
 			fmt.Println("Usage: replay upload <file>")
 			os.Exit(1)
 		}
-		url, err := client.Upload("http://localhost:8080", os.Args[2])
+		url, err := client.Upload("http://localhost:8080", args[1])
 		if err != nil {
 			fmt.Printf("Error uploading: %v\n", err)
 			os.Exit(1)
@@ -81,4 +105,43 @@ func main() {
 	default:
 		fmt.Println("Unknown command. Usage: replay record <output_file>")
 	}
+}
+
+func playRecording(filePath string, speed float64) error {
+	reader, err := format.NewReplayReader(filePath)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	header, err := reader.ReadHeader()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Playing: %dx%d session\n", header.Width, header.Height)
+
+	var lastTime float64
+
+	for {
+		event, err := reader.ReadEvent()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		delay := (event.Time - lastTime) / speed
+		if delay > 0 {
+			time.Sleep(time.Duration(delay * float64(time.Second)))
+		}
+		lastTime = event.Time
+
+		if event.Type == format.EventOutput {
+			_, _ = os.Stdout.Write(event.RawData)
+		}
+	}
+
+	fmt.Println("\nPlayback done.")
+	return nil
 }

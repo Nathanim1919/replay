@@ -8,7 +8,8 @@ import (
 )
 
 type Handler struct {
-	Service *Service
+	Service     *Service
+	DeviceStore *DeviceAuthStore
 }
 
 type RegisterRequest struct {

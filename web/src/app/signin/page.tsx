@@ -14,7 +14,7 @@ const SigninPage = () => {
   }
   return (
     <div className="grid place-items-center h-screen w-screen overflow-hidden bg-amber-100">
-    <div className="border p-4 grid gap-4 min-w-[300px] max-w-sm w-full  shadow-[16px_16px_0px_0px_rgba(0,0,0,1)]">
+    <div className="border p-4 grid gap-4 min-w-75 max-w-sm w-full  shadow-[16px_16px_0px_0px_rgba(0,0,0,1)]">
       <div className="flex flex-col justify-center items-center">
         <h1 className="font-bold text-3xl">Welcome Back!</h1>
         <p className="text-gray-500">Please sign in to your account.</p>

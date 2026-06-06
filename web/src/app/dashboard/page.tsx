@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useAuth } from "@/context/AuthContext"
 
 interface Session {
   id: string
@@ -32,15 +33,19 @@ function formatDate(dateStr: string): string {
 export default function Home() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
+  const {user } = useAuth();
 
   useEffect(() => {
-    fetch("/api/sessions")
-      .then((res) => res.json())
-      .then((data) => {
-        setSessions(data || [])
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+    const fetchSessions = async () => {
+      fetch("/api/recordings")
+        .then((res) => res.json())
+        .then((data) => {
+          setSessions(data || [])
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
+    }
+    fetchSessions()
   }, [])
 
   return (
@@ -50,18 +55,13 @@ export default function Home() {
       padding: "24px",
       fontFamily: "'Inter', -apple-system, sans-serif",
     }}>
-      <div style={{ maxWidth: "960px", margin: "0 auto" }}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "24px",
-        }}>
+      <div>
+        <div className="w-[70%] mx-auto flex justify-between">
           <h1 style={{ color: "#3b82f6", fontSize: "24px", fontWeight: "bold", margin: 0 }}>
             Replay
           </h1>
           <span style={{ color: "#666", fontSize: "14px" }}>
-            {sessions.length} session{sessions.length !== 1 ? "s" : ""}
+            Hey {user?.name || "there"}! You have {sessions.length} session{sessions.length !== 1 ? "s" : ""}
           </span>
         </div>
 

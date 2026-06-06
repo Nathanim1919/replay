@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface User {
@@ -14,7 +15,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => void;
   logout: () => void;
-  me: () => void;
+  me: () => Promise<User | null>;
   isLoading: boolean;
 }
 
@@ -25,30 +26,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
       const res = await fetch("http://localhost:8080/auth/login", {
         method: "POST",
-         credentials: "include",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
+
       if (res.ok) {
-        alert("Login successful!");
-        me();
+        await me();
+        router.push("/dashboard");
+      } else {
+        alert("Login failed!");
       }
-    } catch (error) {
+    } catch {
       alert("Login failed!");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const me = async () => {
+  const me = async (): Promise<User | null> => {
     setIsLoading(true);
     try {
       const res = await fetch("http://localhost:8080/auth/me", {
@@ -61,34 +66,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (res.ok) {
         const data = await res.json();
-        setUser({
+        const currentUser = {
           id: data.id,
           email: data.email,
           name: data.name,
           password: "",
-        });
+        };
+        setUser(currentUser);
+        return currentUser;
       } else {
         setUser(null);
+        return null;
       }
-    } catch (error) {
+    } catch {
       setUser(null);
+      return null;
     } finally {
       setIsLoading(false);
     }
   };
 
   const logout = () => {
-    alert("Logged out!");
-    localStorage.removeItem("token");
-    setUser(null);
+    
   };
 
   useEffect(() => {
     async function fetchUser() {
-      await me();
+      const currentUser = await me();
+      if (!currentUser) {
+        router.push("/signin");
+      }
     }
     fetchUser();
-  }, []);
+  }, [router]);
 
   return (
     <AuthContext.Provider

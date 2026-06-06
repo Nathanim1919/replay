@@ -26,7 +26,10 @@ func main() {
 		fmt.Println("Error creating blob store:", err)
 		os.Exit(1)
 	}
-	authHandler := &auth.Handler{Service: &auth.Service{Users: sessionStore}}
+	authHandler := &auth.Handler{
+		Service:     &auth.Service{Users: sessionStore},
+		DeviceStore: auth.NewDeviceAuthStore(),
+	}
 	svr := server.NewServer(sessionStore, blobStore, authHandler)
 	fmt.Println("Server started on port", PORT)
 	err = http.ListenAndServe(":" + PORT, svr.Router())

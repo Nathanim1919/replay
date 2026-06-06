@@ -10,7 +10,7 @@ export default function SessionPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch(`/api/sessions/${shortcode}`)
+    fetch(`/api/recordings/${shortcode}`)
       .then((res) => {
         if (!res.ok) throw new Error("Session not found")
         return res.text()

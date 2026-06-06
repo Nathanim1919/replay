@@ -8,9 +8,9 @@ export default function Header() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="w-full">
+    <header className="w-full border-b border-amber-200 py-3">
       <nav
-        className="max-w-6xl mx-auto flex items-center justify-around px-6 py-5 backdrop-blur-sm"
+        className="max-w-6xl mx-auto flex items-center justify-around px-6"
         style={{ background: "transparent" }}
       >
         {/* Left: Brand */}
@@ -51,13 +51,6 @@ export default function Header() {
           >
             How it works
           </a>
-          <Link
-            href="/docs"
-            className="text-sm font-medium transition-opacity hover:opacity-80"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            Docs
-          </Link>
         </div>
 
         {/* Right: Actions */}
@@ -71,7 +64,20 @@ export default function Header() {
           >
             GitHub
           </a>
-
+          <Link
+            href={"/signin"}
+            className="text-sm font-medium transition-opacity hover:opacity-80"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Sign In
+          </Link>
+          <Link
+            href={"/signup"}
+            className="text-sm font-medium transition-opacity hover:opacity-80"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Sign Up
+          </Link>
           <button
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}

@@ -73,12 +73,20 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := AuthResponse{
-		Token: token,
-	}
+	// res := AuthResponse{
+	// 	Token: token,
+	// }
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	// set token in cookie
+	http.SetCookie(w, &http.Cookie{
+    Name:     "token",
+    Value:    token,
+    HttpOnly: true,
+    Path:     "/",
+    SameSite: http.SameSiteLaxMode, 
+})
+	// json.NewEncoder(w).Encode(res)
 }
 
 

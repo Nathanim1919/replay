@@ -31,6 +31,27 @@ func NewServer(sessionStore RecordingStore, blobStore BlobStore, authHandler aut
 	return &Server{sessionStore: sessionStore, blobStore: blobStore, authHandler: authHandler}
 }
 
+
+// Example of custom CORSMiddleware function
+func cors(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        
+        // Handle preflight requests
+        if r.Method == http.MethodOptions {
+            w.WriteHeader(http.StatusNoContent) // ✅ Explicitly return 204 for OPTIONS
+            return 
+        }
+		next.ServeHTTP(w, r)
+	})
+}
+
+
 func (s *Server) Router() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/upload", s.handleUpload)
@@ -41,7 +62,7 @@ func (s *Server) Router() http.Handler {
 	mux.Handle("/auth/me",
 	auth.AuthMiddleware(http.HandlerFunc(s.authHandler.Me)),
 )
-	return mux
+	return cors(mux)
 }
 
 func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {

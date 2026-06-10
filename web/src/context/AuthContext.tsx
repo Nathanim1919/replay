@@ -86,19 +86,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const logout = () => {
-    
-  };
+  const logout = () => {};
 
   useEffect(() => {
-    async function fetchUser() {
-      const currentUser = await me();
-      if (!currentUser) {
-        router.push("/signin");
-      }
-    }
+    const fetchUser = async () => {
+      await me();
+    };
     fetchUser();
-  }, [router]);
+  }, []);
 
   return (
     <AuthContext.Provider

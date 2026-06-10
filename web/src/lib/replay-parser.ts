@@ -33,7 +33,23 @@ export interface ReplaySession {
 }
 
 export function parseReplay(content: string): ReplaySession {
-  const lines = content.split("\n").filter((line) => line.trim() !== "");
+ // Check if the content is Base64 encoded (starts with eyJ or similar string structure)
+  // Or handle it selectively based on how you call this function.
+  let rawText = content;
+  
+  if (content.startsWith("eyJ")) {
+    try {
+      rawText = atob(content); // Decodes Base64 to a UTF-8 string
+    } catch (e) {
+      console.error("Failed to decode Base64 content", e);
+    }
+  }
+
+  const lines = rawText.split("\n").filter((line) => line.trim() !== "");
+  if (lines.length === 0) {
+    throw new Error("Replay file is empty");
+  }
+
   const header = JSON.parse(lines[0]) as ReplayHeader;
 
   const events: ReplayEvent[] = lines.slice(1).map((line) => {

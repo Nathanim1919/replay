@@ -23,6 +23,7 @@ export const Player = ({ content, demo = false }: PlayerProps) => {
   const speedRef = useRef<number>(1.0)
   const session = useMemo(() => parseReplay(content), [content])
   const sessionRef = useRef<ReplaySession>(session)
+
   sessionRef.current = session
   const demoRef = useRef(demo)
   demoRef.current = demo
@@ -169,13 +170,7 @@ export const Player = ({ content, demo = false }: PlayerProps) => {
 
   if (demo) {
     return (
-      <div style={{
-        background: "#000",
-        borderRadius: "8px",
-        border: "1px solid #222",
-        overflow: "hidden",
-        padding: "8px",
-      }}>
+      <div>
         <Terminal
           ref={terminalRef}
           width={session.header.width}
@@ -224,13 +219,7 @@ export const Player = ({ content, demo = false }: PlayerProps) => {
         </div>
 
         {/* Terminal */}
-        <div style={{
-          background: "#000",
-          borderRadius: "8px",
-          border: "1px solid #222",
-          overflow: "hidden",
-          padding: "8px",
-        }}>
+        <div>
           <Terminal
             ref={terminalRef}
             width={session.header.width}
@@ -249,16 +238,7 @@ export const Player = ({ content, demo = false }: PlayerProps) => {
         </div>
 
         {/* Controls */}
-        <div style={{
-          marginTop: "12px",
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          padding: "10px 16px",
-          background: "#161616",
-          borderRadius: "8px",
-          border: "1px solid #222",
-        }}>
+        <div>
           <button
             onClick={isPlaying ? pausePlayback : startPlayback}
             style={{

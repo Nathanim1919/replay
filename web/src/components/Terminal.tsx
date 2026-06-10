@@ -85,6 +85,7 @@ interface TerminalProps {
     theme?: string
 }
 
+// eslint-disable-next-line react/display-name
 const Terminal = forwardRef<TerminalHandle, TerminalProps>(({width, height, theme = "dark"}, ref) => {
     const divRef = useRef<HTMLDivElement>(null)
     const termRef = useRef<XTerm | null>(null)
@@ -93,9 +94,9 @@ const Terminal = forwardRef<TerminalHandle, TerminalProps>(({width, height, them
         if (!divRef.current) return
 
         const term = new XTerm({
-            cols: width,
-            rows: height,
-            cursorBlink: false,
+            // cols: width,
+            // rows: height,
+            cursorBlink: true,
             scrollback: 0,
             theme: terminalThemes[theme] || terminalThemes.dark,
         })
@@ -109,7 +110,7 @@ const Terminal = forwardRef<TerminalHandle, TerminalProps>(({width, height, them
         return ()=>{
             term.dispose()
         }
-    },[])
+    },[theme])
 
     // Update theme without re-creating terminal
     useEffect(() => {

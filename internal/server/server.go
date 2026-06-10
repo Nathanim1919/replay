@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/Nathanim1919/replay/internal/format"
@@ -135,14 +136,39 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 
 }
 func (s *Server) handleListRecording(w http.ResponseWriter, r *http.Request) {
-	recordings, err := s.sessionStore.ListRecordings()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    recordings, err := s.sessionStore.ListRecordings()
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(recordings)
+    var wg sync.WaitGroup
+    sem := make(chan struct{}, 4) // Limit concurrency to 4
+
+    for i := range recordings {
+        wg.Add(1)
+        
+        // Pass a direct pointer to the specific recording element in the slice
+        go func(rec *Recording) {
+            defer wg.Done()
+            sem <- struct{}{}
+            defer func() { <-sem }()
+
+            // Fetch the file using the specific recording's shortcode
+            preview, err := s.blobStore.GetFile(rec.Shortcode)
+            if err != nil {
+                // Log the error if needed, but don't crash the server
+                return
+            }
+            
+            // Safely assign the preview data directly to this element
+            rec.Preview = preview
+        }(&recordings[i]) // <--- Passing the pointer to the exact index element
+    }
+    wg.Wait()
+
+    w.Header().Set("Content-Type", "application/json")
+    _ = json.NewEncoder(w).Encode(recordings)
 }
 func (s *Server) handleGetRecording(w http.ResponseWriter, r *http.Request) {
 	shortcode := r.PathValue("shortcode")

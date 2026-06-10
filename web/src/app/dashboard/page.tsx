@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useAuth } from "@/context/AuthContext"
+import Player from "@/components/Player"
 
 interface Session {
   id: string
   shortcode: string
   title: string
+  preview?: string
   duration: number
   width: number
   height: number
@@ -49,14 +51,8 @@ export default function Home() {
   }, [])
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#0d0d0d",
-      padding: "24px",
-      fontFamily: "'Inter', -apple-system, sans-serif",
-    }}>
-      <div>
-        <div className="w-[70%] mx-auto flex justify-between">
+      <div className="bg-white p-2 w-[70%] mx-auto">
+        <div className="flex justify-between">
           <h1 style={{ color: "#3b82f6", fontSize: "24px", fontWeight: "bold", margin: 0 }}>
             Replay
           </h1>
@@ -77,16 +73,13 @@ export default function Home() {
           </div>
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div className="grid grid-cols-1">
           {sessions.map((session) => (
-            <Link
+            <div
               key={session.id}
-              href={`/s/${session.shortcode}`}
-              style={{ textDecoration: "none" }}
             >
               <div
                 style={{
-                  padding: "16px",
                   background: "#161616",
                   borderRadius: "8px",
                   border: "1px solid #222",
@@ -106,15 +99,19 @@ export default function Home() {
                   <div style={{ color: "#666", fontSize: "13px", marginTop: "4px" }}>
                     {session.shell} · {session.width}x{session.height} · {formatDate(session.created_at)}
                   </div>
+                  {session.preview && (
+                    <div className="relative w-full h-full overflow-hidden">
+                      <Player content={session.preview} demo={false}/>
+                    </div>
+                  )}
                 </div>
                 <div style={{ color: "#888", fontSize: "14px", fontFamily: "monospace" }}>
                   {formatTime(session.duration)}
                 </div>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       </div>
-    </div>
-  )
+)
 }

@@ -36,7 +36,7 @@ export default function SessionPage() {
   if (!content) return (
     <div style={{
       minHeight: "100vh",
-      background: "#0d0d0d",
+      background: "#ffffff",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",

@@ -9,14 +9,12 @@ import "time"
 // 	PasswordHash string
 // }
 
-
-
-
 type Recording struct {
 	ID        string    `json:"id"`
 	Shortcode string    `json:"shortcode"`
 	UserID    string    `json:"user_id"`
 	Title     string    `json:"title"`
+	Preview   []byte    `json:"preview,omitempty"`
 	Duration  float64   `json:"duration"`
 	Width     int       `json:"width"`
 	Height    int       `json:"height"`
@@ -34,4 +32,5 @@ type RecordingStore interface {
 type BlobStore interface {
 	SaveFile(shortcode string, data []byte) error
 	GetFile(shortcode string) ([]byte, error)
+	PreviewReplay(shortcode string, maxEvents int) (string, error)
 }

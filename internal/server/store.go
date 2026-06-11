@@ -24,7 +24,7 @@ type Recording struct {
 
 type RecordingStore interface {
 	SaveRecording(recording *Recording) error
-	ListRecordings() ([]Recording, error)
+	ListRecordings(userID string) ([]Recording, error)
 	GetRecordingByShortcode(shortcode string) (*Recording, error)
 	// GetRecordingByID(id string) (*Recording, error)
 }

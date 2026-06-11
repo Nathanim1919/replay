@@ -58,7 +58,7 @@ func cors(next http.Handler) http.Handler {
 func (s *Server) Router() http.Handler {
     mux := http.NewServeMux()
     mux.Handle("POST /api/upload", auth.AuthMiddleware(http.HandlerFunc(s.handleUpload)))
-    mux.HandleFunc("GET /api/recordings", s.handleListRecording)
+    mux.Handle("GET /api/recordings", auth.AuthMiddleware(http.HandlerFunc(s.handleListRecording)))
     mux.HandleFunc("GET /api/recordings/{shortcode}", s.handleGetRecording)
     
     // Auth endpoints
@@ -146,7 +146,14 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 
 }
 func (s *Server) handleListRecording(w http.ResponseWriter, r *http.Request) {
-    recordings, err := s.sessionStore.ListRecordings()
+	claims, ok := r.Context().Value("claims").(*auth.Claims)
+	if !ok {
+		fmt.Println("No claims found in context")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	fmt.Printf("Authenticated user ID from claims: %s\n", claims.UserID)
+	recordings, err := s.sessionStore.ListRecordings(claims.UserID)
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
@@ -192,6 +199,7 @@ func (s *Server) handleGetRecording(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
+
 
 func generateShortcode(length int) string {
 	charset := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"

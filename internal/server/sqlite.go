@@ -59,8 +59,8 @@ func (s *SQLiteStore) SaveRecording(recording *Recording) error {
 	return nil
 }
 
-func (s *SQLiteStore) ListRecordings() ([]Recording, error) {
-	rows, err := s.db.Query("SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at FROM recordings")
+func (s *SQLiteStore) ListRecordings(userId string) ([]Recording, error) {
+	rows, err := s.db.Query("SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at FROM recordings WHERE user_id = ?", userId)
 	if err != nil {
 		return nil, err
 	}

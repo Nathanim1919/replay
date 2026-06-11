@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/Nathanim1919/replay/internal/format"
 	"io"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/Nathanim1919/replay/cmd/lib"
+	"github.com/Nathanim1919/replay/internal/format"
 
 	"github.com/Nathanim1919/replay/internal/client"
 	"github.com/Nathanim1919/replay/internal/recorder"
@@ -23,6 +25,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	session, err := lib.LoadSession()
+		if err != nil {
+			fmt.Printf("Failed to load session: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Authenticated with access token: %s\n", session.AccessToken)
+
 	switch args[0] {
 	case "help":
 		fmt.Println("Usage:")
@@ -32,20 +41,30 @@ func main() {
 		os.Exit(0)
 
 	case "login":
-		resp, err := client.Login()
-		if err != nil {
-			fmt.Printf("Login failed: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Printf("User code: %s\n", resp.UserCode)
-		fmt.Printf("Verify at: %s\n", resp.VerificationURI)
-		fmt.Println("Waiting for approval in the browser...")
-		if err := client.PollDeviceAuth("http://localhost:8080", resp.DeviceCode, resp.Interval, resp.ExpiresIn); err != nil {
-			fmt.Printf("Login failed: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Println("Login approved.")
-		os.Exit(0)
+        resp, err := client.Login()
+        if err != nil {
+            fmt.Printf("Login failed: %v\n", err)
+            os.Exit(1)
+        }
+        fmt.Printf("User code: %s\n", resp.UserCode)
+        fmt.Printf("Verify at: %s\n", resp.VerificationURI)
+        fmt.Println("Waiting for approval in the browser...")
+        
+        // 1. Capture the returned session tokens from the successful poll
+        session, err := client.PollDeviceAuth("http://localhost:8080", resp.DeviceCode, resp.Interval, resp.ExpiresIn)
+        if err != nil {
+            fmt.Printf("Login failed: %v\n", err)
+            os.Exit(1)
+        }
+        
+        // 2. Persist the session to local machine files
+        if err := lib.SaveSession(session); err != nil {
+            fmt.Printf("Failed to save credentials locally: %v\n", err)
+            os.Exit(1)
+        }
+
+        fmt.Println("Login approved and session saved securely.")
+        os.Exit(0)
 
 	case "version":
 		fmt.Println("Replay CLI version 1.0.0")
@@ -66,7 +85,7 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Printf("Recording saved to %s\n", outputPath)
-		url, err := client.Upload("http://localhost:8080", outputPath)
+		url, err := client.Upload("http://localhost:8080", outputPath, session.AccessToken)
 		if err != nil {
 			fmt.Printf("Upload failed: %v (file saved locally)\n", err)
 		} else {
@@ -95,7 +114,7 @@ func main() {
 			fmt.Println("Usage: replay upload <file>")
 			os.Exit(1)
 		}
-		url, err := client.Upload("http://localhost:8080", args[1])
+		url, err := client.Upload("http://localhost:8080", args[1], session.AccessToken)
 		if err != nil {
 			fmt.Printf("Error uploading: %v\n", err)
 			os.Exit(1)

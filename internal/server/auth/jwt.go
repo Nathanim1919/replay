@@ -22,8 +22,8 @@ func GetSecretKey() []byte {
 	return []byte(secret)
 }
 
-func GenerateJWT(userId string) (string, error) {
-	claims := &Claims{
+func GenerateJWT(userId string) (string,string, error) {
+	AccessTokenclaims := &Claims{
 		UserID: userId,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
@@ -32,13 +32,26 @@ func GenerateJWT(userId string) (string, error) {
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedToken, err := token.SignedString(GetSecretKey())
-	if err != nil {
-		return "", err
+	RefreshTokenClaims := &Claims{
+		UserID: userId,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * 24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Subject:   userId,
+		},
 	}
-	return signedToken, nil
+
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, AccessTokenclaims)
+    refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, RefreshTokenClaims)
+	
+
+	signedToken, err := accessToken.SignedString(GetSecretKey())
+    signedRefreshToken, err := refreshToken.SignedString(GetSecretKey())
+	if err != nil {
+		return "", "", err
+	}
+	return signedToken, signedRefreshToken, nil
 }
 
 func ValidateJWT(tokenStr string) (*Claims, error) {

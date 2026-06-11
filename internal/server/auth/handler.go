@@ -68,26 +68,30 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.Service.Login(req.Email, req.Password)
+	accessToken, refreshToken, err := h.Service.Login(req.Email, req.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	// res := AuthResponse{
-	// 	Token: token,
-	// }
-
 	w.Header().Set("Content-Type", "application/json")
 	// set token in cookie
 	http.SetCookie(w, &http.Cookie{
-    Name:     "token",
-    Value:    token,
-    HttpOnly: true,
-    Path:     "/",
-    SameSite: http.SameSiteLaxMode, 
-})
-	// json.NewEncoder(w).Encode(res)
+		Name:     "access_token",
+		Value:    accessToken,
+		HttpOnly: true,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode, 
+	});
+
+	// set refresh token in cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		HttpOnly: true,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode, 
+	});
 }
 
 

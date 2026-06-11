@@ -1,37 +1,44 @@
 package auth
 
 import (
-    "context"
-    "fmt"
-    "net/http"
+	"context"
+	"fmt"
+	"net/http"
+	"strings"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        fmt.Println("-> auth middleware called via cookies")
+        var tokenStr string
 
-        // 1. Get the cookie from the request (Change "token" to whatever name you chose at login)
-        cookie, err := r.Cookie("token")
-        if err != nil {
-            if err == http.ErrNoCookie {
-                http.Error(w, "Authentication cookie missing", http.StatusUnauthorized)
-                return
+        // 1. Check Authorization Header first (for CLI requests)
+        authHeader := r.Header.Get("Authorization")
+        if strings.HasPrefix(authHeader, "Bearer ") {
+            tokenStr = strings.TrimPrefix(authHeader, "Bearer ")
+            fmt.Println("We fucking get the token from the auth header:- ", tokenStr)
+        } else {
+            // 2. Fallback to Cookie (for Web App requests)
+            cookie, err := r.Cookie("access_token")
+            if err == nil {
+                tokenStr = cookie.Value
             }
-            http.Error(w, "Internal server error reading cookie", http.StatusBadRequest)
+        }
+
+        if tokenStr == "" {
+            http.Error(w, "Authentication missing", http.StatusUnauthorized)
             return
         }
 
-        // 2. Validate the JWT found inside the cookie's Value
-        claims, err := ValidateJWT(cookie.Value)
+        // 3. Validate the token statelessly
+        claims, err := ValidateJWT(tokenStr)
         if err != nil {
-            http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+            // If expired or invalid, return 401 so the client knows to call /refresh
+            http.Error(w, "Token expired or invalid", http.StatusUnauthorized)
             return
         }
 
-        fmt.Printf("Authenticated user: %s\n", claims.UserID)
-
-        // 3. Attach claims to the request context exactly as before
         ctx := context.WithValue(r.Context(), "claims", claims)
+        fmt.Printf("Authenticated user ID: %s\n", claims.UserID)
         next.ServeHTTP(w, r.WithContext(ctx))
     })
 }

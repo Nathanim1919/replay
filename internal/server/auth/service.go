@@ -63,30 +63,30 @@ func (s *Service) RegisterUser(name, email, password string) (*domain.User, erro
 	return user, nil
 }
 
-func (s *Service) Login(email, password string) (string, error){
+func (s *Service) Login(email, password string) (string,string, error){
 	// make sure the email is registered
 	existingUser, err := s.Users.GetUserByEmail(email)
 
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if existingUser == nil {
-		return "", ErrUserNotFound
+		return "", "", ErrUserNotFound
 	}
 
 
 	ok := CheckPassword(password, existingUser.PasswordHash)
 	if !ok{
-		return "", ErrInvalidPassword
+		return "", "", ErrInvalidPassword
 	}
 
 	// if password is correct, generate accessToken and refreshToken
-	accessToken, err := GenerateJWT(existingUser.ID)
+	accessToken, refreshToken, err := GenerateJWT(existingUser.ID)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return accessToken, nil
+	return accessToken,refreshToken,  nil
 
 }

@@ -56,27 +56,36 @@ func cors(next http.Handler) http.Handler {
 }
 
 func (s *Server) Router() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/upload", s.handleUpload)
-	mux.HandleFunc("GET /api/recordings", s.handleListRecording)
-	mux.HandleFunc("GET /api/recordings/{shortcode}", s.handleGetRecording)
-	mux.HandleFunc("POST /api/auth/device/init", s.authHandler.DeviceInit)
-	mux.HandleFunc("POST /api/auth/device/poll", s.authHandler.DevicePoll)
-	mux.HandleFunc("POST /api/auth/device/approve", s.authHandler.DeviceApprove)
-	mux.HandleFunc("POST /api/auth/register", s.authHandler.Register)
-	mux.HandleFunc("POST /api/auth/login", s.authHandler.Login)
-	mux.Handle("GET /api/auth/me", auth.AuthMiddleware(http.HandlerFunc(s.authHandler.Me)))
-	mux.HandleFunc("/auth/register", s.authHandler.Register)
-	mux.HandleFunc("/auth/login", s.authHandler.Login)
-	mux.Handle("/auth/me",
-		auth.AuthMiddleware(http.HandlerFunc(s.authHandler.Me)),
-	)
-	return cors(mux)
+    mux := http.NewServeMux()
+    mux.Handle("POST /api/upload", auth.AuthMiddleware(http.HandlerFunc(s.handleUpload)))
+    mux.HandleFunc("GET /api/recordings", s.handleListRecording)
+    mux.HandleFunc("GET /api/recordings/{shortcode}", s.handleGetRecording)
+    
+    // Auth endpoints
+    mux.HandleFunc("POST /api/auth/device/init", s.authHandler.DeviceInit)
+    mux.HandleFunc("POST /api/auth/device/poll", s.authHandler.DevicePoll)
+    
+    // 1. WRAP THIS ROUTE WITH THE MIDDLEWARE
+    mux.Handle("POST /api/auth/device/approve", auth.AuthMiddleware(http.HandlerFunc(s.authHandler.DeviceApprove)))
+    
+    mux.HandleFunc("POST /api/auth/register", s.authHandler.Register)
+    mux.HandleFunc("POST /api/auth/login", s.authHandler.Login)
+    mux.Handle("GET /api/auth/me", auth.AuthMiddleware(http.HandlerFunc(s.authHandler.Me)))
+    
+    // ... rest of your router
+    return cors(mux)
 }
 
 func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	// read the entire request body
 	body, err := io.ReadAll(r.Body)
+	claims, ok := r.Context().Value("claims").(*auth.Claims)
+	if !ok {
+		fmt.Println("No claims found in context")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	fmt.Printf("Authenticated user ID from claims: %s\n", claims.UserID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -115,7 +124,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		ID:        uuid.New().String(),
 		Shortcode: shortcode,
 		Title:     title,
-		// UserID:    header.UserID, // Assuming UserID is part of the header
+		UserID:    claims.UserID, // Use the authenticated user ID
 		Duration:  header.Duration,
 		Width:     header.Width,
 		Height:    header.Height,
@@ -127,6 +136,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Printf("Saved recording: %s (shortcode: %s) UserID: %s\n", title, shortcode, claims.UserID)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{

@@ -51,10 +51,10 @@ export default function Features() {
   return (
     <div
       id="features"
-      className="max-w-[80%] mx-auto mt-10"
+      className=" mx-auto bg-gray-100 border-t border-gray-300 relative py-10"
       style={{ scrollMarginTop: "90px" }}
     >
-      <div className="flex flex-col py-10">
+      <div className="py-10 grid place-items-center">
         <h2
           className="text-5xl sm:text-6xl font-extrabold tracking-tight"
           style={{ color: "var(--text-primary)" }}
@@ -62,41 +62,30 @@ export default function Features() {
           Built for developers
         </h2>
         <p
-          className="mt-3 text-xl sm:text-2xl font-medium leading-snug max-w-3xl"
-          style={{ color: "var(--text-heading)" }}
         >
           Every feature exists because plain terminal recordings aren&apos;t
           enough.
         </p>
       </div>
       <div
-        className="bg-cover bg-center bg-no-repeat border border-(--border-strong) border-r-0 border-b-0"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          backgroundImage:
-            "radial-gradient(ellipse at top left, var(--hero-overlay) 0%, transparent 70%), linear-gradient(var(--hero-overlay-base), var(--hero-overlay-base)), url('/hero-bg.jpeg')",
-        }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-[95%] md:w-[80%] mx-auto bg-white  border border-gray-200 rounded-2xl"
       >
         {features.map((feature) => {
           const Icon = feature.icon;
           return (
             <div
               key={feature.title}
-              className="p-8 sm:p-10 border border-(--border-strong) border-l-0 border-t-0"
+              className="p-8 grid gap-2 opacity-60 hover:opacity-100 transition"
             >
               <div
-                className="mb-5 flex h-10 w-10 items-center justify-center rounded-lg border border-(--border)"
-                style={{
-                  background: "var(--feature-icon-bg)",
-                  color: "var(--feature-icon-fg)",
-                }}
+                className="mb-5 flex h-16 w-16 text-gray-400 items-center justify-center"
+              
               >
-                <Icon size={18} strokeWidth={1.75} />
+                <Icon size={24} strokeWidth={1.75} />
               </div>
               <h3
-                className="font-extrabold text-xl sm:text-2xl tracking-tight mb-2"
-                style={{ color: "var(--text-primary)" }}
+                className="font-extrabold tracking-tight mb-2"
+               
               >
                 {feature.title}
               </h3>

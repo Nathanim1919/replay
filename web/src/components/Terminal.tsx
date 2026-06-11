@@ -80,37 +80,43 @@ export const terminalThemes: Record<string, ITheme> = {
 }
 
 interface TerminalProps {
-    width: number
-    height: number
-    theme?: string
+  width: number
+  height: number
+  theme?: string
+  preview?: boolean
 }
 
 // eslint-disable-next-line react/display-name
-const Terminal = forwardRef<TerminalHandle, TerminalProps>(({width, height, theme = "dark"}, ref) => {
+const Terminal = forwardRef<TerminalHandle, TerminalProps>(({width, height, theme = "dark", preview}, ref) => {
     const divRef = useRef<HTMLDivElement>(null)
     const termRef = useRef<XTerm | null>(null)
 
-    useEffect(()=>{
-        if (!divRef.current) return
+   useEffect(() => {
+  if (!divRef.current) return
 
-        const term = new XTerm({
-            // cols: width,
-            // rows: height,
-            cursorBlink: true,
-            scrollback: 0,
-            theme: terminalThemes[theme] || terminalThemes.dark,
-        })
-        const fitAddon = new FitAddon()
-        term.loadAddon(fitAddon)
-        term.open(divRef.current)
-        fitAddon.fit()
+  const term = new XTerm({
+    cursorBlink: !preview,
+    scrollback: 0,
+    fontSize: preview ? 12 : 14,
+    disableStdin: preview,
+    theme: terminalThemes[theme] || terminalThemes.dark,
+  })
 
-        termRef.current = term
+  const fitAddon = new FitAddon()
+  term.loadAddon(fitAddon)
+  term.open(divRef.current)
 
-        return ()=>{
-            term.dispose()
-        }
-    },[theme])
+  // 🔥 important: wait for layout
+  setTimeout(() => {
+    fitAddon.fit()
+  }, 0)
+
+  termRef.current = term
+
+  return () => {
+    term.dispose()
+  }
+}, [theme, preview])
 
     // Update theme without re-creating terminal
     useEffect(() => {
@@ -124,13 +130,12 @@ const Terminal = forwardRef<TerminalHandle, TerminalProps>(({width, height, them
         reset: () => termRef.current?.reset(),
     }))
 
-    return (
-        <div
-            ref={divRef}
-            style={{ width: "100%", height: "100%"  }}
-            className="hide-scrollbar"
-        />
-    )
+ return (
+  <div
+    ref={divRef}
+    className="w-full h-full min-h-65 overflow-hidden"
+  />
+)
 })
 
 export default Terminal

@@ -1,119 +1,174 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import Player from "@/components/Player"
-import { Check, Copy, Terminal } from "lucide-react"
+import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { Check, Copy, Terminal } from "lucide-react";
+import BgImage from "../../../public/Artz Now _ 1910437696159313939 (2).jpeg";
+import Player from "@/components/Player";
 
 export function CopyCommand({ command }: { command: string }) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(command)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }, [command])
+    navigator.clipboard.writeText(command);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }, [command]);
 
   return (
     <button
       onClick={handleCopy}
-      className="group flex items-center gap-2 rounded-md px-3 py-1.5 font-mono text-xs transition-colors cursor-pointer border"
-      style={{ background: "var(--copy-cmd-bg)", borderColor: "var(--border)" }}
+      className="group flex items-center gap-2 rounded-lg border px-3 py-1.5 font-mono text-[11px] transition duration-200 hover:border-white/20"
+      style={{
+        background: "rgba(255,255,255,0.03)",
+        borderColor: "rgba(255,255,255,0.06)",
+        color: "rgba(255,255,255,0.5)",
+      }}
     >
-      <span style={{ color: "var(--text-tertiary)" }}>$</span>
-      <span style={{ color: "var(--text-secondary)" }}>{command}</span>
-      <span
-        className="ml-1 flex items-center justify-center transition-opacity"
-        style={{ color: "var(--text-tertiary)" }}
-      >
-        {copied ? <Check size={12} /> : <Copy size={12} className="opacity-80 group-hover:opacity-80 transition-opacity" />}
-      </span>
+      <span className="text-white/30">$</span>
+      <span>{command}</span>
+      {copied ? (
+        <Check size={11} className="text-emerald-400" />
+      ) : (
+        <Copy size={11} className="opacity-40 group-hover:opacity-100 transition-opacity" />
+      )}
     </button>
-  )
+  );
 }
 
 export default function Hero() {
-  const [demoContent, setDemoContent] = useState<string | null>(null)
+  const [demoContent, setDemoContent] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/test.replay")
       .then((res) => res.text())
       .then(setDemoContent)
-      .catch(() => {})
-  }, [])
+      .catch(() => {});
+  }, []);
 
   return (
-    <div className="grid">
-      {/* Side by side: text left, terminal right */}
-      <div className="grid">
-        <div className="w-full py-4 flex flex-col gap-4 items-center">
-          {/* Badge above headline */}
-        
+    <section className="relative w-full min-h-screen flex items-center overflow-hidden bg-[#050505]">
+      {/* Background Layer with Precise Vignette Gradients */}
+     {/* Background Layer (Premium Vercel-style depth system) */}
+{/* Background Layer (clean + visible + cinematic) */}
+<div className="absolute inset-0">
+  <Image
+    src={BgImage}
+    alt="Background"
+    fill
+    priority
+    quality={100}
+    className="object-cover scale-105 opacity-50"
+  />
 
-          <div className="flex flex-col gap-2">
-            <h1 className="text-6xl font-extrabold uppercase" style={{ color: "var(--hero-headline)" }}>
-              <span
-                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 relative rounded-sm"
-                style={{ background: "var(--hero-tag-bg)", color: "var(--hero-tag-text)" }}
-              >
-                Terminal
-                <Terminal size={22} strokeWidth={2.5} className="shrink-0" />
-              </span> sessions,
-            </h1>
-            <h1 className="text-6xl font-extrabold uppercase" style={{ color: "var(--hero-headline-accent)" }}>
-              beautifully replayed.
-            </h1>
+  {/* soft dark base */}
+  <div className="absolute inset-0 bg-black/50" />
+
+  {/* vignette only (this is what makes it premium) */}
+  <div className="absolute inset-0 bg-radial-gradient-[ellipse_at_center] from-transparent via-black/20 to-black" />
+
+  {/* subtle glow (optional but nice) */}
+  <div className="absolute right-0 top-1/2 h-175 w-175 -translate-y-1/2 bg-blue-500/10 blur-[140px]" />
+</div>
+
+      {/* Main Container Layout */}
+      <div className="mx-auto max-w-7xl w-full grid grid-cols-1 items-center gap-16 px-6 py-16 lg:grid-cols-[500px_2fr]">
+        
+        {/* LEFT SIDE: Minimalist Engineered Typography */}
+        <div className="flex flex-col gap-5 text-left z-10">
+          {/* Micro Badge */}
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/5 bg-white/3 px-2.5 py-1 text-[11px] font-medium tracking-wide text-neutral-400">
+            <Terminal size={12} className="text-neutral-500" />
+            CLI Replay Engine
           </div>
-          <p className="text-lg mt-1 max-w-2xl text-center" style={{ color: "var(--hero-body)" }}>
-            Record your CLI as a lightweight, interactive event stream. Share pixel-perfect web replays. Stop pasting dead logs into Slack.
+
+          {/* Compressed, High-Impact Heading */}
+          <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl leading-[1.15]">
+            Share interactive recordings.
+            <span className="block text-neutral-500 font-medium text-3xl sm:text-4xl mt-1">
+              Lightweight terminal sessions.
+            </span>
+          </h1>
+
+          {/* Concise Subtext */}
+          <p className="max-w-sm text-sm leading-relaxed text-neutral-400">
+            Record your CLI as an event stream. Share pixel-perfect replays, not static logs.
           </p>
 
-          {/* Install commands */}
-          <div className="flex items-center gap-3 mt-2">
-            <CopyCommand command="go install github.com/nathanim1919/replay@latest" />
-            <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>or</span>
-            <CopyCommand command="brew install replay" />
+          {/* Micro Commands Section */}
+          {/* <div className="flex flex-col gap-2 pt-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <CopyCommand command="go install github.com/nathanim1919/replay@latest" />
+              <CopyCommand command="brew install replay" />
+            </div>
+          </div> */}
+
+          {/* Clean Action Anchors */}
+          <div className="flex items-center gap-5 pt-4">
+            <Link
+              href="/signup"
+              className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black hover:bg-neutral-200 transition-all shadow-sm"
+            >
+              Get Started
+            </Link>
+
+            <Link
+              href="#features"
+              className="text-xs font-medium text-neutral-400 hover:text-white transition-colors flex items-center gap-1"
+            >
+              View Features <span className="opacity-60">→</span>
+            </Link>
           </div>
         </div>
 
-        <div
-          className="self-start p-4 rounded-2xl md:w-5xl mx-auto"
-          style={{ background: "var(--demo-panel-bg)" }}
-        >
-          {/* Window chrome */}
-          <div
-            className="flex items-center gap-2 rounded-t-lg px-4 py-2.5"
-            style={{
-              background: "#1a1a1a",
-              border: "1px solid #333",
-              borderBottom: "none",
-            }}
-          >
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#ff5f57" }} />
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#febc2e" }} />
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#28c840" }} />
-            <span className="ml-2 font-bold" style={{ color: "rgba(255,255,255,0.25)" }}>
-              Replay demo
-            </span>
+      <div className="relative w-full flex justify-center lg:justify-end items-center">
+  
+  {/* glow backplate */}
+  <div className="absolute w-[90%] h-[85%] bg-blue-500/10 rounded-[30px] blur-[120px]" />
+
+  {/* perspective wrapper */}
+  <div
+    className="w-full max-w-3xl aspect-[16/10] rounded-2xl transition-transform duration-700 hover:scale-[1.02]"
+    style={{
+      perspective: "1400px",
+      transformStyle: "preserve-3d",
+    }}
+  >
+    {/* TERMINAL (BIGGER + MORE IMMERSIVE) */}
+    <div
+      className="w-full h-full rounded-2xl border border-white/10 bg-neutral-950/80 backdrop-blur-md overflow-hidden shadow-[0_40px_120px_-20px_rgba(0,0,0,0.9)] flex flex-col"
+      style={{
+        transform: "rotateX(14deg) rotateY(-20deg) rotateZ(6deg)",
+        transformStyle: "preserve-3d",
+      }}
+    >
+      {/* header */}
+      <div className="h-10 w-full bg-neutral-900/60 border-b border-white/[0.06] flex items-center px-4 gap-2">
+        <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+        <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+
+        <span className="mx-auto text-[11px] text-neutral-500 font-mono">
+          demo.replay
+        </span>
+      </div>
+
+      {/* content */}
+      <div className="flex-1 bg-black/40 p-2">
+        {demoContent ? (
+          <Player content={demoContent} mode="preview" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-neutral-500 text-sm">
+            LOADING STREAM...
           </div>
-          <div
-            className="overflow-hidden rounded-b-lg"
-            style={{ background: "#000", border: "1px solid #333", borderTop: "none" }}
-          >
-            {demoContent ? (
-              <div className="p-1">
-                <Player content={demoContent} demo />
-              </div>
-            ) : (
-              <div
-                className="flex items-center justify-center"
-                style={{ height: "350px", color: "var(--text-tertiary)" }}
-              >
-                Loading demo...
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
-  )
+  </div>
+</div>
+
+      </div>
+    </section>
+  );
 }

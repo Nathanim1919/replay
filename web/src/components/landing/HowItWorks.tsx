@@ -10,6 +10,8 @@ import {
   Upload,
   type LucideIcon,
 } from "lucide-react";
+import Image from "next/image";
+import BgImage from "../../../public/NewOffset _ Framer Agency (4).jpeg"
 
 type CmdLine = { text: string; variant?: "command" | "output" };
 
@@ -33,7 +35,9 @@ function StepCommand({ lines }: { lines?: CmdLine[] | string }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5"
+   
+    >
       {items.map((line, i) =>
         line.variant === "output" ? (
           <span
@@ -109,7 +113,7 @@ function StepCard({ item }: { item: Step }) {
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="p-6 sm:p-8 border-r border-(--border-strong) flex flex-col justify-between"
+      className="p-6 sm:p-8 flex flex-col justify-between  backdrop-blur-xs border border-gray-300"
     >
       <div
         className="mb-5 flex h-10 w-10 items-center justify-center rounded-lg border border-(--border)"
@@ -145,28 +149,50 @@ export default function HowItWorks() {
   return (
     <div
       id="how-it-works"
-      className="max-w-[80%] mx-auto py-10"
+      className=" mx-auto relative py-10 min-h-screen"
       style={{ scrollMarginTop: "90px" }}
     >
+      <div className="absolute inset-0">
+  <Image
+    src={BgImage}
+    alt="Background"
+    fill
+    priority
+    quality={100}
+    className="object-cover inset-0"
+  />
+
+  {/* soft dark base */}
+  <div className="absolute inset-0 bg-white/80" />
+
+  {/* vignette only (this is what makes it premium) */}
+  <div className="absolute inset-0 bg-radial-gradient-[ellipse_at_center] from-transparent via-white/20 to-white" />
+
+  {/* subtle glow (optional but nice) */}
+  {/* <div className="absolute right-0 top-1/2 h-175 w-175 -translate-y-1/2 bg-blue-500/10 blur-[140px]" /> */}
+</div>
+      <div className="w-[95%] md:w-[70%] mx-auto relative z-100 flex justify-between flex-col min-h-screen">
+
       <h2
         className="text-5xl sm:text-6xl font-extrabold tracking-tight"
         style={{ color: "var(--text-primary)" }}
       >
         How it works
       </h2>
+      <div
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        style={{ background: "var(--bg-elevated)" }}
+      >
+        {steps.map((item) => (
+          <StepCard key={item.step} item={item} />
+        ))}
+      </div>
       <p
         className="mt-3 text-xl sm:text-2xl font-medium leading-snug"
         style={{ color: "var(--text-heading)", margin: "0 0 48px" }}
       >
         Three commands. Zero configuration.
       </p>
-      <div
-        className="grid gap-6 sm:grid-cols-2 sm:gap-0 lg:grid-cols-3 border border-(--border-strong) border-r-0 overflow-hidden"
-        style={{ background: "var(--bg-elevated)" }}
-      >
-        {steps.map((item) => (
-          <StepCard key={item.step} item={item} />
-        ))}
       </div>
     </div>
   );

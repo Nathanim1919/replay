@@ -56,12 +56,12 @@ export default function Features() {
     >
       <div className="py-10 grid place-items-center">
         <h2
-          className="text-5xl sm:text-6xl font-extrabold tracking-tight"
-          style={{ color: "var(--text-primary)" }}
+          className="text-5xl sm:text-6xl font-extrabold tracking-tight text-black"
         >
           Built for developers
         </h2>
         <p
+          className="text-lg sm:text-xl text-gray-600 max-w-2xl text-center"
         >
           Every feature exists because plain terminal recordings aren&apos;t
           enough.
@@ -84,14 +84,13 @@ export default function Features() {
                 <Icon size={24} strokeWidth={1.75} />
               </div>
               <h3
-                className="font-extrabold tracking-tight mb-2"
+                className="font-extrabold tracking-tight mb-2 text-black"
                
               >
                 {feature.title}
               </h3>
               <p
-                className="text-sm sm:text-base leading-relaxed max-w-md"
-                style={{ color: "var(--text-secondary)" }}
+                className="text-sm sm:text-base leading-relaxed max-w-md text-gray-700"
               >
                 {feature.desc}
               </p>

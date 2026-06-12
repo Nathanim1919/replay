@@ -14,6 +14,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => void;
+  signup: (name: string, email: string, password: string) => void;
   logout: () => void;
   me: () => Promise<User | null>;
   isLoading: boolean;
@@ -27,6 +28,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+
+  const signup = async (name: string, email: string, password: string) => { 
+    setIsLoading(true);
+    try {
+      const res = await fetch("http://localhost:8080/api/auth/signup", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      if (res.ok) {
+        await login(email, password);
+      } else {
+        alert("Signup failed!");
+      }
+    } catch {
+      alert("Signup failed!");
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -111,6 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         login,
         logout,
         me,
+        signup,
         isLoading,
       }}
     >

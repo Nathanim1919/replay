@@ -25,10 +25,10 @@ export default function LandingPage() {
           <RecordingList />
         ) : (
           <>
-            <HowItWorks />
             <Features />
           </>
         )}
+        <HowItWorks />
         <Footer />
       </div>
     </ThemeProvider>

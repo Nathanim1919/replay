@@ -11,7 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
-import BgImage from "../../../public/NewOffset _ Framer Agency (4).jpeg"
+import BgImage from "../../../public/NewOffset _ Framer Agency (4).jpeg";
 
 type CmdLine = { text: string; variant?: "command" | "output" };
 
@@ -35,9 +35,7 @@ function StepCommand({ lines }: { lines?: CmdLine[] | string }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-1.5"
-   
-    >
+    <div className="flex flex-col gap-1.5 text-gray-700">
       {items.map((line, i) =>
         line.variant === "output" ? (
           <span
@@ -128,16 +126,10 @@ function StepCard({ item }: { item: Step }) {
           className={hovered && item.spinOnHover ? "step-icon-spin" : undefined}
         />
       </div>
-      <h3
-        className="font-extrabold text-xl sm:text-2xl tracking-tight mb-2"
-        style={{ color: "var(--text-primary)" }}
-      >
+      <h3 className="font-extrabold text-xl sm:text-2xl tracking-tight mb-2 text-black">
         {item.title}
       </h3>
-      <p
-        className="text-sm sm:text-base leading-relaxed mb-5"
-        style={{ color: "var(--text-secondary)" }}
-      >
+      <p className="text-sm sm:text-base leading-relaxed mb-5 text-gray-700">
         {item.desc}
       </p>
       <StepCommand lines={item.cmd} />
@@ -153,46 +145,35 @@ export default function HowItWorks() {
       style={{ scrollMarginTop: "90px" }}
     >
       <div className="absolute inset-0">
-  <Image
-    src={BgImage}
-    alt="Background"
-    fill
-    priority
-    quality={100}
-    className="object-cover inset-0"
-  />
+        <Image
+          src={BgImage}
+          alt="Background"
+          fill
+          priority
+          quality={100}
+          className="object-cover inset-0"
+        />
 
-  {/* soft dark base */}
-  <div className="absolute inset-0 bg-white/80" />
+        {/* soft dark base */}
+        <div className="absolute inset-0 bg-white/80" />
 
-  {/* vignette only (this is what makes it premium) */}
-  <div className="absolute inset-0 bg-radial-gradient-[ellipse_at_center] from-transparent via-white/20 to-white" />
-
-  {/* subtle glow (optional but nice) */}
-  {/* <div className="absolute right-0 top-1/2 h-175 w-175 -translate-y-1/2 bg-blue-500/10 blur-[140px]" /> */}
-</div>
-      <div className="w-[95%] md:w-[70%] mx-auto relative z-100 flex justify-between flex-col min-h-screen">
-
-      <h2
-        className="text-5xl sm:text-6xl font-extrabold tracking-tight"
-        style={{ color: "var(--text-primary)" }}
-      >
-        How it works
-      </h2>
-      <div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        style={{ background: "var(--bg-elevated)" }}
-      >
-        {steps.map((item) => (
-          <StepCard key={item.step} item={item} />
-        ))}
+        <div className="absolute inset-0 bg-radial-gradient-[ellipse_at_center] from-transparent via-white/20 to-white" />
       </div>
-      <p
-        className="mt-3 text-xl sm:text-2xl font-medium leading-snug"
-        style={{ color: "var(--text-heading)", margin: "0 0 48px" }}
-      >
-        Three commands. Zero configuration.
-      </p>
+      <div className="w-[95%] md:w-[70%] mx-auto relative z-100 flex justify-between flex-col min-h-screen">
+        <h2 className="text-5xl sm:text-6xl font-extrabold tracking-tight text-black">
+          How it works
+        </h2>
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          style={{ background: "var(--bg-elevated)" }}
+        >
+          {steps.map((item) => (
+            <StepCard key={item.step} item={item} />
+          ))}
+        </div>
+        <p className="mt-3 text-xl sm:text-2xl font-medium leading-snug text-gray-700">
+          Three commands. Zero configuration.
+        </p>
       </div>
     </div>
   );

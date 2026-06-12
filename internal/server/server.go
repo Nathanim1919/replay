@@ -26,6 +26,7 @@ type Server struct {
 type authHandler interface {
 	Register(http.ResponseWriter, *http.Request)
 	Login(http.ResponseWriter, *http.Request)
+	Logout(http.ResponseWriter, *http.Request)
 	Me(http.ResponseWriter, *http.Request)
 	DeviceInit(http.ResponseWriter, *http.Request)
 	DevicePoll(http.ResponseWriter, *http.Request)
@@ -70,6 +71,7 @@ func (s *Server) Router() http.Handler {
     
     mux.HandleFunc("POST /api/auth/register", s.authHandler.Register)
     mux.HandleFunc("POST /api/auth/login", s.authHandler.Login)
+	mux.HandleFunc("POST /api/auth/logout", s.authHandler.Logout)
     mux.Handle("GET /api/auth/me", auth.AuthMiddleware(http.HandlerFunc(s.authHandler.Me)))
     
     // ... rest of your router

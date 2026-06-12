@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import Player from "@/components/Player";
 
@@ -32,7 +31,7 @@ function formatDate(dateStr: string): string {
   });
 }
 
-export default function Home() {
+export default function RecordingList() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true);

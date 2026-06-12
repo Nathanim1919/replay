@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Terminal } from "lucide-react";
+import { LogOut, Terminal } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Header() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-black backdrop-blur-xl">
@@ -45,12 +45,12 @@ export default function Header() {
         {/* Actions */}
         <div className="flex items-center gap-3">
           {isAuthenticated ? (
-            <Link
-              href="/dashboard"
-              className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:opacity-90"
+            <button
+              onClick={logout}
+              className="rounded-lg cursor-pointer hover:opacity-60 px-4 py-2 text-sm font-medium text-white transition"
             >
-              Dashboard
-            </Link>
+              <LogOut />
+            </button>
           ) : (
             <>
               <Link
@@ -59,12 +59,12 @@ export default function Header() {
               >
                 Sign In
               </Link>
-
+/
               <Link
                 href="/signup"
                 className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:opacity-90"
               >
-                Get Started
+                Sign Up
               </Link>
             </>
           )}

@@ -6,19 +6,29 @@ import Hero from "@/components/landing/Hero";
 import HowItWorks from "@/components/landing/HowItWorks";
 import Features from "@/components/landing/Features";
 import Footer from "@/components/landing/Footer";
+import { useAuth } from "@/context/AuthContext";
+import RecordingList from "@/components/RecordingList";
 
 export default function LandingPage() {
+  const { user } = useAuth();
+
   return (
     <ThemeProvider>
       <div className="font-manrope">
-        <div className={`overflow-hidden flex flex-col min-h-screen bg-cover bg-center bg-no-repeat`} 
-       >
-          {" "}
+        <div
+          className={`overflow-hidden flex flex-col min-h-screen bg-cover bg-center bg-no-repeat`}
+        >
           <Header />
           <Hero />
         </div>
-        <HowItWorks />
-        <Features />
+        {user ? (
+          <RecordingList />
+        ) : (
+          <>
+            <HowItWorks />
+            <Features />
+          </>
+        )}
         <Footer />
       </div>
     </ThemeProvider>

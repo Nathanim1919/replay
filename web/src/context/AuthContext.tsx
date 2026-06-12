@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (res.ok) {
         await me();
-        router.push("/dashboard");
+        router.push("/");
       } else {
         alert("Login failed!");
       }
@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const me = async (): Promise<User | null> => {
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/auth/me", {
+      const res = await fetch("http://localhost:8080/api/auth/me", {
         method: "GET",
         credentials: "include",
         headers: {
@@ -86,7 +86,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const logout = () => {};
+  const logout = () => {
+    fetch("http://localhost:8080/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    }).then(() => {
+      setUser(null);
+      router.push("/");
+    });
+  };
 
   useEffect(() => {
     const fetchUser = async () => {

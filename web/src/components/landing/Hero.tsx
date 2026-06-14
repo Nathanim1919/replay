@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Check, Copy, Terminal } from "lucide-react";
 import BgImage from "../../../public/Artz Now _ 1910437696159313939 (2).jpeg";
 import Player from "@/components/Player";
+import { useAuth } from "@/context/AuthContext";
 
 export function CopyCommand({ command }: { command: string }) {
   const [copied, setCopied] = useState(false);
@@ -39,6 +40,7 @@ export function CopyCommand({ command }: { command: string }) {
 
 export default function Hero() {
   const [demoContent, setDemoContent] = useState<string | null>(null);
+  const {isAuthenticated, user} = useAuth();
 
   useEffect(() => {
     fetch("/test.replay")
@@ -73,51 +75,38 @@ export default function Hero() {
 </div>
 
       {/* Main Container Layout */}
-      <div className="mx-auto max-w-7xl w-full grid grid-cols-1 items-center gap-16 px-6 py-16 lg:grid-cols-[500px_2fr]">
+      <div className="mx-auto max-w-[90%] w-full grid grid-cols-1 items-center gap-16 px-6 py-16 lg:grid-cols-[500px_2fr]">
         
         {/* LEFT SIDE: Minimalist Engineered Typography */}
         <div className="flex flex-col gap-5 text-left z-10">
           {/* Micro Badge */}
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/5 bg-white/3 px-2.5 py-1 text-[11px] font-medium tracking-wide text-neutral-400">
-            <Terminal size={12} className="text-neutral-500" />
-            CLI Replay Engine
+            {/* <Terminal size={12} className="text-neutral-500" /> */}
+           {isAuthenticated ? `✦ WELCOME BACK ${user?.name.split(" ")[0]} ✦` : "✦ NOW LIVE ✦"}
           </div>
 
           {/* Compressed, High-Impact Heading */}
-          <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl leading-[1.15]">
-            Share interactive recordings.
-            <span className="block text-neutral-500 font-medium text-3xl sm:text-4xl mt-1">
-              Lightweight terminal sessions.
-            </span>
+          <h1 className="md:text-6xl font-bold tracking-tight text-white text-4xl leading-[1.15]">
+          {isAuthenticated?"Ready to stream your next session?":" Kill the static logs. Stream your terminal instantly."}
           </h1>
 
           {/* Concise Subtext */}
-          <p className="max-w-sm text-sm leading-relaxed text-neutral-400">
-            Record your CLI as an event stream. Share pixel-perfect replays, not static logs.
+        {!isAuthenticated?  <p className="max-w-sm text-sm leading-relaxed text-neutral-400">
+           Capture interactive terminal sessions as lightweight event streams. Share perfect replays with a single command.
+          </p> : 
+          <p>
+            Your CLI is authenticated and ready. Run the record command below to instantly capture and share your terminal events.
           </p>
-
-          {/* Micro Commands Section */}
-          {/* <div className="flex flex-col gap-2 pt-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <CopyCommand command="go install github.com/nathanim1919/replay@latest" />
-              <CopyCommand command="brew install replay" />
-            </div>
-          </div> */}
+          }
+        
 
           {/* Clean Action Anchors */}
-          <div className="flex items-center gap-5 pt-4">
+       <div className="flex items-center gap-5 pt-4">
             <Link
               href="/signup"
               className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black hover:bg-neutral-200 transition-all shadow-sm"
             >
-              Get Started
-            </Link>
-
-            <Link
-              href="#features"
-              className="text-xs font-medium text-neutral-400 hover:text-white transition-colors flex items-center gap-1"
-            >
-              View Features <span className="opacity-60">→</span>
+              Get Started Free
             </Link>
           </div>
         </div>
@@ -129,7 +118,7 @@ export default function Hero() {
 
   {/* perspective wrapper */}
   <div
-    className="w-full max-w-3xl aspect-[16/10] rounded-2xl transition-transform duration-700 hover:scale-[1.02]"
+    className="w-full max-w-3xl aspect-16/10 rounded-2xl transition-transform duration-700 hover:scale-[1.02]"
     style={{
       perspective: "1400px",
       transformStyle: "preserve-3d",
@@ -144,7 +133,7 @@ export default function Hero() {
       }}
     >
       {/* header */}
-      <div className="h-10 w-full bg-neutral-900/60 border-b border-white/[0.06] flex items-center px-4 gap-2">
+      <div className="h-10 w-full bg-neutral-900/60 border-b border-white/6 flex items-center px-4 gap-2">
         <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
         <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
         <div className="w-2.5 h-2.5 rounded-full bg-green-500" />

@@ -19,6 +19,8 @@ import Terminal, { TerminalHandle } from "./Terminal"
 import Waveform from "./Waveform"
 import Search from "./Search"
 
+import { Search as SearchIcon } from "lucide-react"
+
 interface PlayerProps {
   content: string
   mode?: "preview" | "full"
@@ -37,6 +39,8 @@ export const Player = ({
   const [isPlaying, setIsPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
   const [currentTime, setCurrentTime] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+const [isFullscreen, setIsFullscreen] = useState(false)
 
   const rafRef = useRef<number | null>(null)
   const lastWallTime = useRef<number>(0)
@@ -64,6 +68,31 @@ export const Player = ({
     terminalRef.current?.reset()
     eventIndex.current = 0
   }, [])
+
+  const enterFullscreen = useCallback(() => {
+  const el = containerRef.current
+  if (!el) return
+
+  if (el.requestFullscreen) {
+    el.requestFullscreen()
+  }
+}, [])
+
+const exitFullscreen = useCallback(() => {
+  if (document.exitFullscreen) {
+    document.exitFullscreen()
+  }
+}, [])
+
+
+useEffect(() => {
+  const onChange = () => {
+    setIsFullscreen(!!document.fullscreenElement)
+  }
+
+  document.addEventListener("fullscreenchange", onChange)
+  return () => document.removeEventListener("fullscreenchange", onChange)
+}, [])
 
   const tick = useCallback(() => {
     const now = Date.now()
@@ -148,7 +177,6 @@ export const Player = ({
     [isPlaying, currentTime]
   )
 
-  // Auto play (preview/demo use cases)
   useEffect(() => {
     if (autoPlay || mode === "preview") {
       clear()
@@ -163,6 +191,22 @@ export const Player = ({
     }
   }, [autoPlay, mode, tick, clear])
 
+
+  useEffect(() => {
+  const onChange = () => {
+    // delay so DOM finishes switching fullscreen
+    requestAnimationFrame(() => {
+      terminalRef.current?.reset?.(); // optional but safe
+    });
+  };
+
+  document.addEventListener("fullscreenchange", onChange);
+
+  return () => {
+    document.removeEventListener("fullscreenchange", onChange);
+  };
+}, []);
+
   const format = (t: number) => {
     const m = Math.floor(t / 60)
     const s = Math.floor(t % 60)
@@ -170,7 +214,7 @@ export const Player = ({
   }
 
   // -------------------------
-  // PREVIEW MODE (dashboard)
+  // PREVIEW MODE
   // -------------------------
   if (mode === "preview") {
     return (
@@ -186,13 +230,17 @@ export const Player = ({
   }
 
   // -------------------------
-  // FULL MODE (session page)
+  // FULL MODE
   // -------------------------
   return (
-    <div className="w-full h-full text-white flex flex-col gap-4">
-
-      {/* Header */}
-      <div className="flex items-center justify-between bg-[#161616] border border-[#222] rounded-lg px-4 py-2">
+    <div
+      ref={containerRef}
+      className={`w-full text-white flex flex-col bg-black overflow-hidden ${
+        isFullscreen ? "h-screen fixed inset-0 z-50" : "h-[500px] rounded-lg border border-[#222]"
+      }`}
+    >
+      {/* HEADER */}
+      <div className="flex items-center justify-between bg-[#161616] border-b border-[#222] px-4 py-2 flex-shrink-0">
         <div className="flex items-center gap-3">
           <span className="text-blue-500 font-bold">Replay</span>
           <span className="text-sm text-gray-400">
@@ -200,60 +248,83 @@ export const Player = ({
           </span>
         </div>
 
-        <div className="text-sm text-gray-400">
-          {format(duration)}
+        <div className="flex items-center gap-3 text-sm text-gray-400">
+          <button
+            className="hover:text-white transition"
+            onClick={() => console.log("open search")}
+          >
+            <SearchIcon size={18} />
+          </button>
+
+          {/* Fullscreen button */}
+          <button
+            onClick={isFullscreen ? exitFullscreen : enterFullscreen}
+            className="hover:text-white transition text-xs border border-gray-600 px-2 py-1 rounded"
+          >
+            {isFullscreen ? "Exit Full" : "Full"}
+          </button>
+
+          <span>{format(duration)}</span>
         </div>
       </div>
 
-      {/* Terminal */}
-      <div className="w-full bg-black rounded-lg overflow-hidden">
+      {/* TERMINAL WRAPPER - This manages the layout boundaries */}
+      <div className="flex-1 min-h-0 w-full relative group overflow-hidden bg-black">
         <Terminal
           ref={terminalRef}
           width={session.header.width}
           height={session.header.height}
+          preview={false}
+          // theme={theme} // Pass your state theme here if applicable
         />
-      </div>
 
-      {/* Waveform */}
-      <Waveform
-        bars={waveform}
-        currentTime={currentTime}
-        duration={duration}
-        onSeek={seek}
-      />
+        {/* YouTube-style overlay */}
+        <div className="
+          absolute bottom-0 left-0 right-0
+          bg-gradient-to-t from-black/90 to-transparent
+          p-4 z-10
+          opacity-0 group-hover:opacity-100
+          transition-opacity duration-200
+        ">
+          {/* Waveform */}
+          <Waveform
+            bars={waveform}
+            currentTime={currentTime}
+            duration={duration}
+            onSeek={seek}
+          />
 
-      {/* Controls */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={isPlaying ? pause : play}
-          className={`px-4 py-1 rounded text-sm font-bold ${
-            isPlaying ? "bg-red-500" : "bg-green-500"
-          }`}
-        >
-          {isPlaying ? "Pause" : "Play"}
-        </button>
+          {/* Controls */}
+          <div className="flex items-center gap-3 mt-2">
+            <button
+              onClick={isPlaying ? pause : play}
+              className={`px-4 py-1 rounded text-sm font-bold ${
+                isPlaying ? "bg-red-500" : "bg-green-500"
+              }`}
+            >
+              {isPlaying ? "Pause" : "Play"}
+            </button>
 
-        {[1, 2, 4, 8].map((s) => (
-          <button
-            key={s}
-            onClick={() => changeSpeed(s)}
-            className={`px-3 py-1 text-sm rounded border ${
-              speed === s
-                ? "bg-blue-500 border-blue-400 text-white"
-                : "bg-transparent border-gray-600 text-gray-400"
-            }`}
-          >
-            {s}x
-          </button>
-        ))}
+            {[1, 2, 4, 8].map((s) => (
+              <button
+                key={s}
+                onClick={() => changeSpeed(s)}
+                className={`px-3 py-1 text-sm rounded border ${
+                  speed === s
+                    ? "bg-blue-500 border-blue-400 text-white"
+                    : "bg-transparent border-gray-600 text-gray-400"
+                }`}
+              >
+                {s}x
+              </button>
+            ))}
 
-        <div className="ml-auto text-xs text-gray-400 font-mono">
-          {format(currentTime)} / {format(duration)}
+            <div className="ml-auto text-xs text-gray-300 font-mono">
+              {format(currentTime)} / {format(duration)}
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Search */}
-      <Search index={searchIndex} onSeek={seek} />
     </div>
   )
 }

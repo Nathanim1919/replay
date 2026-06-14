@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import {useRef, useEffect, useImperativeHandle, forwardRef} from "react"
-import {Terminal as XTerm, ITheme} from "@xterm/xterm"
-import {FitAddon} from "@xterm/addon-fit"
-import "@xterm/xterm/css/xterm.css"
+import { useRef, useEffect, useImperativeHandle, forwardRef } from "react";
+import { Terminal as XTerm, ITheme } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import "@xterm/xterm/css/xterm.css";
 
 export interface TerminalHandle {
-    write: (data: string) => void
-    reset: () => void
+  write: (data: string) => void;
+  reset: () => void;
 }
 
 export const terminalThemes: Record<string, ITheme> = {
@@ -77,65 +77,89 @@ export const terminalThemes: Record<string, ITheme> = {
     brightCyan: "#a1efe4",
     brightWhite: "#f9f8f5",
   },
-}
+};
 
 interface TerminalProps {
-  width: number
-  height: number
-  theme?: string
-  preview?: boolean
+  width: number;
+  height: number;
+  theme?: string;
+  preview?: boolean;
 }
 
 // eslint-disable-next-line react/display-name
-const Terminal = forwardRef<TerminalHandle, TerminalProps>(({width, height, theme = "dark", preview}, ref) => {
-    const divRef = useRef<HTMLDivElement>(null)
-    const termRef = useRef<XTerm | null>(null)
+const Terminal = forwardRef<TerminalHandle, TerminalProps>(
+  ({theme = "dark", preview }, ref) => {
+    const divRef = useRef<HTMLDivElement>(null);
+    const termRef = useRef<XTerm | null>(null);
 
-   useEffect(() => {
-  if (!divRef.current) return
+useEffect(() => {
+  if (!divRef.current) return;
 
   const term = new XTerm({
     cursorBlink: !preview,
     scrollback: 0,
     fontSize: preview ? 12 : 14,
     disableStdin: preview,
-    theme: terminalThemes[theme] || terminalThemes.dark,
-  })
+    theme: terminalThemes[theme] || terminalThemes.light,
+    allowProposedApi: true
+  });
 
-  const fitAddon = new FitAddon()
-  term.loadAddon(fitAddon)
-  term.open(divRef.current)
+  const fitAddon = new FitAddon();
+  term.loadAddon(fitAddon);
 
-  // 🔥 important: wait for layout
-  setTimeout(() => {
-    fitAddon.fit()
-  }, 0)
+  term.open(divRef.current);
+  termRef.current = term;
 
-  termRef.current = term
+  // Double-fit helper to eliminate off-by-one pixel glitches during layout switches
+  const fit = () => {
+    try {
+      fitAddon.fit();
+      requestAnimationFrame(() => {
+        fitAddon.fit();
+      });
+    } catch (e) {
+      console.log("error fitting terminal", e);
+      // Catch layout-drift race conditions safely
+    }
+  };
+
+  // Initial Paint Fit
+  requestAnimationFrame(fit);
+
+  // ResizeObserver locks onto the true DOM changes
+  const resizeObserver = new ResizeObserver(() => {
+    fit();
+  });
+  resizeObserver.observe(divRef.current);
+
+  window.addEventListener("resize", fit);
+  document.addEventListener("fullscreenchange", fit);
 
   return () => {
-    term.dispose()
-  }
-}, [theme, preview])
+    window.removeEventListener("resize", fit);
+    document.removeEventListener("fullscreenchange", fit);
+    resizeObserver.disconnect();
+    term.dispose();
+  };
+}, [theme, preview]); // Kept clean. Handled layout shifts adaptively via DOM hooks.
 
     // Update theme without re-creating terminal
     useEffect(() => {
-        if (termRef.current) {
-            termRef.current.options.theme = terminalThemes[theme] || terminalThemes.dark
-        }
-    }, [theme])
+      if (termRef.current) {
+        termRef.current.options.theme =
+          terminalThemes[theme] || terminalThemes.dark;
+      }
+    }, [theme]);
 
     useImperativeHandle(ref, () => ({
-        write: (data: string) => termRef.current?.write(data),
-        reset: () => termRef.current?.reset(),
-    }))
+      write: (data: string) => termRef.current?.write(data),
+      reset: () => termRef.current?.reset(),
+    }));
 
- return (
-  <div
-    ref={divRef}
-    className="w-full h-full min-h-65 overflow-hidden"
-  />
-)
-})
+    return (
+      <div ref={divRef} className="w-full h-full min-h-65 overflow-hidden" />
+    );
+  },
+);
 
-export default Terminal
+export default Terminal;

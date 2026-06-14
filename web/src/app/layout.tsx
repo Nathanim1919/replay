@@ -1,21 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Manrope } from "next/font/google";
+import { Geist, Geist_Mono, Manrope, Lexend } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const LexendFont = Lexend({
+  variable: "--font-lexend",
   subsets: ["latin"],
 });
+ 
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
-const manrope = Manrope({
-  subsets: ["latin"],
-});
+// const manrope = Manrope({
+//   variable: "--font-manrope",
+//   subsets: ["latin"],
+// });
 
 export const metadata: Metadata = {
   title: "Replay",
@@ -33,7 +35,7 @@ export default function RootLayout({
       data-theme="dark"
       className={`${geistMono.variable} h-full antialiased`}
     >
-      <body className={`min-h-full flex flex-col ${geistMono.className}`}>
+      <body className={`min-h-full flex flex-col ${LexendFont.className}`}>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

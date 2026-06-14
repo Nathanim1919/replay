@@ -28,7 +28,7 @@ export default function Waveform({ bars, currentTime, duration, onSeek }: Wavefo
         alignItems: "flex-end",
         gap: "1px",
         cursor: "pointer",
-        background: "#111",
+        // background: "#111",
         borderRadius: "4px",
         padding: "4px",
         overflow: "hidden",

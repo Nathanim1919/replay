@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Player from "@/components/Player";
 import { Pencil, Play, Share2 } from "lucide-react";
+import Link from "next/link";
 
 interface Session {
   id: string;
@@ -52,7 +53,7 @@ export default function RecordingList() {
   return (
     <div className="bg-gray-100">
       <div className="p-2 w-[70%] mx-auto py-10">
-        <div className="py-4 max-w-2xl">
+   {!loading && sessions.length !== 0 &&     <div className="py-4 max-w-2xl">
           <h1 className="font-bold text-black text-3xl">
             Your Recent Recordings
           </h1>
@@ -60,7 +61,7 @@ export default function RecordingList() {
             You Play, Share Your Terminal Sessions with Friends and Colleagues.
             Click on a recording to view the full session.
           </p>
-        </div>
+        </div>}
 
         {loading && (
           <div
@@ -84,8 +85,7 @@ export default function RecordingList() {
               marginTop: "48px",
             }}
           >
-            No sessions yet. Record one with:{" "}
-            <code style={{ color: "#3b82f6" }}>replay record</code>
+            No sessions yet. Start recording your terminal sessions to see them here!
           </div>
         )}
 
@@ -98,10 +98,12 @@ export default function RecordingList() {
               {/* PREVIEW AREA */}
               <div className="h-65 bg-black overflow-hidden relative">
                 {/* <Player content={session.preview!} mode="preview" /> */}
-                <div className="w-full h-full bg-black/30 backdrop-blur-sm relative grid place-items-center z-1000">
+                <Link
+                  href={`/s/${session.shortcode}`}
+                 className="w-full h-full bg-black/30 backdrop-blur-sm relative grid place-items-center z-1000">
 
                  <Play  size={64} className="p-1  cursor-pointer hover:text-red-500"/>
-                </div>
+                </Link>
               </div>
 
               {/* META */}

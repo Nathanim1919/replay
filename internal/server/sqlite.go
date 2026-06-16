@@ -98,7 +98,7 @@ func (s *SQLiteStore) UpdateRecording(recording *Recording) error {
 	_, err := s.db.Exec("UPDATE recordings SET title = ? WHERE id = ?", recording.Title, recording.ID)
 	if err != nil {
 		return err
-	}Untitled
+	}
 	return nil
 }
 

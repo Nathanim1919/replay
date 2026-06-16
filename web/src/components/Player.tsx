@@ -1,213 +1,67 @@
 "use client"
 
-import {
-  parseReplay,
-  computeWaveform,
-  buildSearchIndex,
-} from "@/lib/replay-parser"
-
-import {
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-  useMemo,
-} from "react"
-
-import Terminal, { TerminalHandle } from "./Terminal"
+import { useEffect, useRef, useState, useCallback } from "react"
+import Terminal from "./Terminal"
 import Waveform from "./Waveform"
-
-import { Search as SearchIcon, Play, Pause, Maximize, Minimize, RotateCcw } from "lucide-react"
+import { Play, Pause, Maximize, Minimize, RotateCcw } from "lucide-react"
+import { usePlayer } from "@/hooks/usePlayer"
 
 interface PlayerProps {
-  content: string
   mode?: "preview" | "full"
-  autoPlay?: boolean
 }
 
-export const Player = ({
-  content,
-  mode = "full",
-  autoPlay = false,
-}: PlayerProps) => {
-  const session = useMemo(() => parseReplay(content), [content])
+export const Player = ({ mode = "full" }: PlayerProps) => {
+  // Grab everything from our custom context hook
+  const {
+    waveform,
+    duration,
+    play,
+    isPlaying,
+    pause,
+    seek,
+    changeSpeed,
+    currentTime,
+    terminalRef,
+    speed,
+  } = usePlayer()
 
-  const terminalRef = useRef<TerminalHandle>(null)
-
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [speed, setSpeed] = useState(1)
-  const [currentTime, setCurrentTime] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  const rafRef = useRef<number | null>(null)
-  const lastWallTime = useRef<number>(0)
-  const lastReplayTime = useRef<number>(0)
-  const eventIndex = useRef(0)
-  const speedRef = useRef(speed)
-
-  // Use a ref for currentTime to avoid stale closure issues inside the event listener
-  const currentTimeRef = useRef(currentTime)
-  useEffect(() => {
-    currentTimeRef.current = currentTime
-  }, [currentTime])
-
-  useEffect(() => {
-    speedRef.current = speed
-  }, [speed])
-
-  const duration = session.events.at(-1)?.time ?? 0
-
-  const waveform = useMemo(
-    () => computeWaveform(session.events, 150),
-    [session]
-  )
-
-  const searchIndex = useMemo(
-    () => buildSearchIndex(session.events),
-    [session]
-  )
-
-  const clear = useCallback(() => {
-    terminalRef.current?.reset()
-    eventIndex.current = 0
-  }, [])
-
   const enterFullscreen = useCallback(() => {
-    const el = containerRef.current
-    if (!el) return
-    if (el.requestFullscreen) {
-      el.requestFullscreen()
-    }
+    containerRef.current?.requestFullscreen?.()
   }, [])
 
   const exitFullscreen = useCallback(() => {
-    if (document.exitFullscreen) {
-      document.exitFullscreen()
-    }
+    document.exitFullscreen?.()
   }, [])
 
-  const tick = useCallback(() => {
-    const now = Date.now()
-
-    const delta = (now - lastWallTime.current) / 1000
-    const replayTime = lastReplayTime.current + delta * speedRef.current
-
-    const events = session.events
-
-    while (
-      eventIndex.current < events.length &&
-      events[eventIndex.current].time <= replayTime
-    ) {
-      const e = events[eventIndex.current]
-      if (e.type === "o" && e.data) {
-        terminalRef.current?.write(e.data)
-      }
-      eventIndex.current++
-    }
-
-    setCurrentTime(replayTime)
-
-    if (eventIndex.current >= events.length) {
-      setIsPlaying(false)
-      return
-    }
-
-    rafRef.current = requestAnimationFrame(tick)
-  }, [session])
-
-  const play = useCallback(() => {
-    lastWallTime.current = Date.now()
-    lastReplayTime.current = currentTime
-
-    setIsPlaying(true)
-    rafRef.current = requestAnimationFrame(tick)
-  }, [currentTime, tick])
-
-  const pause = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    setIsPlaying(false)
-  }, [])
-
-  const seek = useCallback(
-    (time: number) => {
-      const events = session.events
-
-      clear()
-
-      for (let i = 0; i < events.length; i++) {
-        if (events[i].time > time) break
-
-        if (events[i].type === "o" && events[i].data) {
-          terminalRef.current?.write(events[i].data)
-        }
-
-        eventIndex.current = i + 1
-      }
-
-      setCurrentTime(time)
-
-      if (isPlaying) {
-        lastWallTime.current = Date.now()
-        lastReplayTime.current = time
-        rafRef.current = requestAnimationFrame(tick)
-      } else {
-        lastReplayTime.current = time
-      }
-    },
-    [session, isPlaying, tick, clear]
-  )
-
-  const changeSpeed = useCallback(
-    (s: number) => {
-      setSpeed(s)
-
-      if (isPlaying) {
-        lastWallTime.current = Date.now()
-        lastReplayTime.current = currentTime
-      }
-    },
-    [isPlaying, currentTime]
-  )
-
+  // FIX EFFECT: Keep the latest time accessible to the window event listener without re-binding it
+  const latestTimeRef = useRef(currentTime)
   useEffect(() => {
-    if (autoPlay || mode === "preview") {
-      clear()
-      lastWallTime.current = Date.now()
-      lastReplayTime.current = 0
-      setIsPlaying(true)
-      rafRef.current = requestAnimationFrame(tick)
-    }
+    latestTimeRef.current = currentTime
+  }, [currentTime])
 
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    }
-  }, [autoPlay, mode, tick, clear])
-
-
-  // SMART FIXED EFFECT: Consolidates full screen handling and ensures buffer rebuild
+  // Handles smooth terminal scaling and redraw on window layout switches
   useEffect(() => {
-    const onChange = () => {
+    const onFullscreenChange = () => {
       const isCurrentlyFull = !!document.fullscreenElement
       setIsFullscreen(isCurrentlyFull)
 
-      // Use requestAnimationFrame so the DOM finishes switching scales/dimensions
       requestAnimationFrame(() => {
-        // 1. Completely reset terminal to accommodate layout size updates safely
+        // Safely wipe and re-render historical terminal chunks at the current timestamp
         terminalRef.current?.reset?.()
-        
-        // 2. Re-seek to the exact same position to redraw historical chunks
-        seek(currentTimeRef.current)
+        seek(latestTimeRef.current)
       })
     }
 
-    document.addEventListener("fullscreenchange", onChange)
-    return () => document.removeEventListener("fullscreenchange", onChange)
-  }, [seek])
+    document.addEventListener("fullscreenchange", onFullscreenChange)
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange)
+  }, [seek, terminalRef])
 
-  const format = (t: number) => {
-    const m = Math.floor(t / 60)
-    const s = Math.floor(t % 60)
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60)
+    const s = Math.floor(seconds % 60)
     return `${m}:${s.toString().padStart(2, "0")}`
   }
 
@@ -217,43 +71,28 @@ export const Player = ({
   if (mode === "preview") {
     return (
       <div className="w-full h-full bg-[#0d0d0d] overflow-hidden">
-        <Terminal
-          ref={terminalRef}
-          width={session.header.width}
-          height={session.header.height}
-          preview
-        />
+        <Terminal ref={terminalRef} width={80} height={24} preview />
       </div>
     )
   }
 
   // -------------------------
-  // FULL MODE
+  // FULL PLAYBACK MODE
   // -------------------------
   return (
     <div
       ref={containerRef}
       className={`w-full text-white flex flex-col bg-black overflow-hidden ${
-        isFullscreen ? "h-screen fixed inset-0 z-50" : "h-125 border border-[#222]"
+        isFullscreen ? "h-screen fixed inset-0 z-50" : "h-125 border border-zinc-800 rounded-lg"
       }`}
     >
-      <div className="flex-1 min-h-0 w-full relative group overflow-hidden bg-black shadow-3xl">
-        <Terminal
-          ref={terminalRef}
-          width={session.header.width}
-          height={session.header.height}
-          preview={false}
-        />
+      <div className="flex-1 min-h-0 w-full relative group overflow-hidden bg-black">
+        <Terminal ref={terminalRef} width={80} height={24} preview={false} />
 
-        {/* YouTube-style overlay */}
-        <div className="
-          absolute bottom-0 left-0 right-0
-          bg-linear-to-t from-black/90 to-transparent
-          p-2 z-10
-          opacity-0 group-hover:opacity-100
-          transition-opacity duration-200
-        ">
-          {/* Waveform */}
+        {/* Playback Control Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/95 via-black/70 to-transparent p-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          
+          {/* Timeline Waveform */}
           <Waveform
             bars={waveform}
             currentTime={currentTime}
@@ -261,49 +100,53 @@ export const Player = ({
             onSeek={seek}
           />
 
-          {/* Controls */}
-          <div className="flex items-center gap-1">
-            <button 
-              onClick={() => {
-                seek(0);
-                setIsPlaying(true);
-              }} 
-              className="cursor-pointer opacity-50 hover:opacity-100"
+          {/* Action Row */}
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              onClick={() => seek(0)}
+              className="cursor-pointer text-zinc-400 hover:text-white transition-colors"
+              title="Restart"
             >
-              <RotateCcw size={18}/>
+              <RotateCcw size={18} />
             </button>
+
             <button
               onClick={isPlaying ? pause : play}
-              className="cursor-pointer p-1 hover:bg-gray-800 rounded-md"
+              className="cursor-pointer p-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white rounded-md transition-colors"
             >
-              {isPlaying ? <Pause size={20}/> : <Play size={20}/>}
+              {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
             </button>
 
-            {[1, 2, 4, 8].map((s) => (
-              <button
-                key={s}
-                onClick={() => changeSpeed(s)}
-                className={`px-2 cursor-pointer hover:bg-[#ff3209] py-0.5 text-sm rounded ${
-                  speed === s
-                    ? "bg-[#ff3209]  text-white"
-                    : "bg-transparent text-gray-400"
-                }`}
-              >
-                {s}x
-              </button>
-            ))}
+            {/* Speed Selectors */}
+            <div className="flex items-center gap-1 bg-zinc-900/60 p-0.5 border border-zinc-800/80 rounded-md ml-2">
+              {[1, 2, 4, 8].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => changeSpeed(s)}
+                  className={`px-2 py-0.5 text-xs font-mono font-bold rounded cursor-pointer transition-all ${
+                    speed === s
+                      ? "bg-orange-600 text-white shadow-sm"
+                      : "text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  {s}x
+                </button>
+              ))}
+            </div>
 
-            <div className="flex items-center gap-2 ml-auto text-sm text-gray-400">
+            {/* Timestamp & Screen Toggles */}
+            <div className="flex items-center gap-3 ml-auto text-xs font-mono text-zinc-400">
               <span>
-                {format(currentTime)} / {format(duration)}
+                {formatTime(currentTime)} / {formatTime(duration)}
               </span>
               <button
-                className="cursor-pointer"
+                className="cursor-pointer hover:text-white transition-colors"
                 onClick={isFullscreen ? exitFullscreen : enterFullscreen}
               >
-                {isFullscreen ? <Minimize size={18}/> : <Maximize size={18}/>}
+                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
               </button>
             </div>
+
           </div>
         </div>
       </div>

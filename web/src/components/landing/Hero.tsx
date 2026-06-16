@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Check, Copy, Terminal } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import BgImage from "../../../public/Artz Now _ 1910437696159313939 (2).jpeg";
 import Player from "@/components/Player";
 import { useAuth } from "@/context/AuthContext";

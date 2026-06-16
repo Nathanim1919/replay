@@ -4,7 +4,6 @@ import {
   parseReplay,
   computeWaveform,
   buildSearchIndex,
-  ReplaySession,
 } from "@/lib/replay-parser"
 
 import {
@@ -17,9 +16,8 @@ import {
 
 import Terminal, { TerminalHandle } from "./Terminal"
 import Waveform from "./Waveform"
-import Search from "./Search"
 
-import { Search as SearchIcon } from "lucide-react"
+import { Search as SearchIcon, Play, Pause, Maximize, Minimize, RotateCcw } from "lucide-react"
 
 interface PlayerProps {
   content: string
@@ -40,13 +38,19 @@ export const Player = ({
   const [speed, setSpeed] = useState(1)
   const [currentTime, setCurrentTime] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
-const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const rafRef = useRef<number | null>(null)
   const lastWallTime = useRef<number>(0)
   const lastReplayTime = useRef<number>(0)
   const eventIndex = useRef(0)
   const speedRef = useRef(speed)
+
+  // Use a ref for currentTime to avoid stale closure issues inside the event listener
+  const currentTimeRef = useRef(currentTime)
+  useEffect(() => {
+    currentTimeRef.current = currentTime
+  }, [currentTime])
 
   useEffect(() => {
     speedRef.current = speed
@@ -70,29 +74,18 @@ const [isFullscreen, setIsFullscreen] = useState(false)
   }, [])
 
   const enterFullscreen = useCallback(() => {
-  const el = containerRef.current
-  if (!el) return
+    const el = containerRef.current
+    if (!el) return
+    if (el.requestFullscreen) {
+      el.requestFullscreen()
+    }
+  }, [])
 
-  if (el.requestFullscreen) {
-    el.requestFullscreen()
-  }
-}, [])
-
-const exitFullscreen = useCallback(() => {
-  if (document.exitFullscreen) {
-    document.exitFullscreen()
-  }
-}, [])
-
-
-useEffect(() => {
-  const onChange = () => {
-    setIsFullscreen(!!document.fullscreenElement)
-  }
-
-  document.addEventListener("fullscreenchange", onChange)
-  return () => document.removeEventListener("fullscreenchange", onChange)
-}, [])
+  const exitFullscreen = useCallback(() => {
+    if (document.exitFullscreen) {
+      document.exitFullscreen()
+    }
+  }, [])
 
   const tick = useCallback(() => {
     const now = Date.now()
@@ -192,20 +185,25 @@ useEffect(() => {
   }, [autoPlay, mode, tick, clear])
 
 
+  // SMART FIXED EFFECT: Consolidates full screen handling and ensures buffer rebuild
   useEffect(() => {
-  const onChange = () => {
-    // delay so DOM finishes switching fullscreen
-    requestAnimationFrame(() => {
-      terminalRef.current?.reset?.(); // optional but safe
-    });
-  };
+    const onChange = () => {
+      const isCurrentlyFull = !!document.fullscreenElement
+      setIsFullscreen(isCurrentlyFull)
 
-  document.addEventListener("fullscreenchange", onChange);
+      // Use requestAnimationFrame so the DOM finishes switching scales/dimensions
+      requestAnimationFrame(() => {
+        // 1. Completely reset terminal to accommodate layout size updates safely
+        terminalRef.current?.reset?.()
+        
+        // 2. Re-seek to the exact same position to redraw historical chunks
+        seek(currentTimeRef.current)
+      })
+    }
 
-  return () => {
-    document.removeEventListener("fullscreenchange", onChange);
-  };
-}, []);
+    document.addEventListener("fullscreenchange", onChange)
+    return () => document.removeEventListener("fullscreenchange", onChange)
+  }, [seek])
 
   const format = (t: number) => {
     const m = Math.floor(t / 60)
@@ -236,53 +234,22 @@ useEffect(() => {
     <div
       ref={containerRef}
       className={`w-full text-white flex flex-col bg-black overflow-hidden ${
-        isFullscreen ? "h-screen fixed inset-0 z-50" : "h-[500px] rounded-lg border border-[#222]"
+        isFullscreen ? "h-screen fixed inset-0 z-50" : "h-125 border border-[#222]"
       }`}
     >
-      {/* HEADER */}
-      <div className="flex items-center justify-between bg-[#161616] border-b border-[#222] px-4 py-2 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="text-blue-500 font-bold">Replay</span>
-          <span className="text-sm text-gray-400">
-            {session.header.shell}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3 text-sm text-gray-400">
-          <button
-            className="hover:text-white transition"
-            onClick={() => console.log("open search")}
-          >
-            <SearchIcon size={18} />
-          </button>
-
-          {/* Fullscreen button */}
-          <button
-            onClick={isFullscreen ? exitFullscreen : enterFullscreen}
-            className="hover:text-white transition text-xs border border-gray-600 px-2 py-1 rounded"
-          >
-            {isFullscreen ? "Exit Full" : "Full"}
-          </button>
-
-          <span>{format(duration)}</span>
-        </div>
-      </div>
-
-      {/* TERMINAL WRAPPER - This manages the layout boundaries */}
-      <div className="flex-1 min-h-0 w-full relative group overflow-hidden bg-black">
+      <div className="flex-1 min-h-0 w-full relative group overflow-hidden bg-black shadow-3xl">
         <Terminal
           ref={terminalRef}
           width={session.header.width}
           height={session.header.height}
           preview={false}
-          // theme={theme} // Pass your state theme here if applicable
         />
 
         {/* YouTube-style overlay */}
         <div className="
           absolute bottom-0 left-0 right-0
-          bg-gradient-to-t from-black/90 to-transparent
-          p-4 z-10
+          bg-linear-to-t from-black/90 to-transparent
+          p-2 z-10
           opacity-0 group-hover:opacity-100
           transition-opacity duration-200
         ">
@@ -295,32 +262,44 @@ useEffect(() => {
           />
 
           {/* Controls */}
-          <div className="flex items-center gap-3 mt-2">
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => seek(0)} 
+              className="cursor-pointer opacity-50 hover:opacity-100"
+            >
+              <RotateCcw size={18}/>
+            </button>
             <button
               onClick={isPlaying ? pause : play}
-              className={`px-4 py-1 rounded text-sm font-bold ${
-                isPlaying ? "bg-red-500" : "bg-green-500"
-              }`}
+              className="cursor-pointer p-1 hover:bg-gray-800 rounded-md"
             >
-              {isPlaying ? "Pause" : "Play"}
+              {isPlaying ? <Pause size={20}/> : <Play size={20}/>}
             </button>
 
             {[1, 2, 4, 8].map((s) => (
               <button
                 key={s}
                 onClick={() => changeSpeed(s)}
-                className={`px-3 py-1 text-sm rounded border ${
+                className={`px-2 cursor-pointer hover:bg-[#ff3209] py-0.5 text-sm rounded ${
                   speed === s
-                    ? "bg-blue-500 border-blue-400 text-white"
-                    : "bg-transparent border-gray-600 text-gray-400"
+                    ? "bg-[#ff3209]  text-white"
+                    : "bg-transparent text-gray-400"
                 }`}
               >
                 {s}x
               </button>
             ))}
 
-            <div className="ml-auto text-xs text-gray-300 font-mono">
-              {format(currentTime)} / {format(duration)}
+            <div className="flex items-center gap-2 ml-auto text-sm text-gray-400">
+              <span>
+                {format(currentTime)} / {format(duration)}
+              </span>
+              <button
+                className="cursor-pointer"
+                onClick={isFullscreen ? exitFullscreen : enterFullscreen}
+              >
+                {isFullscreen ? <Minimize size={18}/> : <Maximize size={18}/>}
+              </button>
             </div>
           </div>
         </div>

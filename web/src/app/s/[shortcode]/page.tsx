@@ -63,7 +63,7 @@ export default function SessionPage() {
   return (
     <PageLayout>
       {/* Container simulating Apple's floating window look */}
-      <div className=" relative w-full max-w-200 aspect-square overflow-hidden  transition-all duration-300 grid place-items-center">
+      <div className=" relative w-full max-w-200 aspect-square overflow-hidden grid place-items-center">
         <Player content={content} />
       </div>
     </PageLayout>

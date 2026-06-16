@@ -93,6 +93,30 @@ func (s *SQLiteStore) GetRecordingByShortcode(shortcode string) (*Recording, err
 	return &recording, nil // Success
 }
 
+
+func (s *SQLiteStore) UpdateRecording(recording *Recording) error {
+	_, err := s.db.Exec("UPDATE recordings SET title = ? WHERE id = ?", recording.Title, recording.ID)
+	if err != nil {
+		return err
+	}Untitled
+	return nil
+}
+
+
+func (s *SQLiteStore) GetRecordingById(id string) (*Recording, error) {
+	row := s.db.QueryRow("SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at FROM recordings WHERE id = ?", id)
+
+	var recording Recording
+	err := row.Scan(&recording.ID, &recording.Shortcode, &recording.Title, &recording.UserID, &recording.Duration, &recording.Width, &recording.Height, &recording.Shell, &recording.CreatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil // No recording found
+	}
+	if err != nil {
+		return nil, err // real error
+	}
+	return &recording, nil // Success
+}
+
 func (s *SQLiteStore) CreateUser(user *domain.User) error {
 	_, err := s.db.Exec("INSERT INTO users (id, name, email, password) VALUES (?, ?, ?, ?)", user.ID, user.Name, user.Email, user.PasswordHash)
 	return err

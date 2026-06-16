@@ -61,6 +61,7 @@ func (s *Server) Router() http.Handler {
     mux.Handle("POST /api/upload", auth.AuthMiddleware(http.HandlerFunc(s.handleUpload)))
     mux.Handle("GET /api/recordings", auth.AuthMiddleware(http.HandlerFunc(s.handleListRecording)))
     mux.HandleFunc("GET /api/recordings/{shortcode}", s.handleGetRecording)
+	mux.Handle("PUT /api/recordings/{id}", auth.AuthMiddleware(http.HandlerFunc(s.handleUpdateRecording)))
     
     // Auth endpoints
     mux.HandleFunc("POST /api/auth/device/init", s.authHandler.DeviceInit)
@@ -200,6 +201,41 @@ func (s *Server) handleGetRecording(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+}
+
+
+func (s *Server) handleUpdateRecording(w http.ResponseWriter, r *http.Request) {
+	// get the recording ID from the URL path
+	id := r.PathValue("id")
+	record, err := s.sessionStore.GetRecordingById(id)
+	if err != nil {
+		http.Error(w, "Recording not found", http.StatusNotFound)
+		return
+	}
+
+	// parse the request body for updated title and description
+	var req struct {
+		Titile string `json:"title"`
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// update the recording's title and description
+	record.Title = req.Titile
+
+	// save the updated recording back to the store
+	err = s.sessionStore.UpdateRecording(record)
+	if err != nil {
+		fmt.Printf("Failed to update recording: %v\n", err.Error())
+		http.Error(w, "Failed to update recording", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 

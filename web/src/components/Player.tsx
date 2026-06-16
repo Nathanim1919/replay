@@ -264,7 +264,10 @@ export const Player = ({
           {/* Controls */}
           <div className="flex items-center gap-1">
             <button 
-              onClick={() => seek(0)} 
+              onClick={() => {
+                seek(0);
+                setIsPlaying(true);
+              }} 
               className="cursor-pointer opacity-50 hover:opacity-100"
             >
               <RotateCcw size={18}/>

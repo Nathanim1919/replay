@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Manrope, Lexend } from "next/font/google";
+import { Geist_Mono, Lexend } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { Toaster } from 'sonner';
+
 
 const LexendFont = Lexend({
   variable: "--font-lexend",
@@ -36,6 +38,7 @@ export default function RootLayout({
       className={`${geistMono.variable} h-full antialiased`}
     >
       <body className={`min-h-full flex flex-col ${LexendFont.className}`}>
+        <Toaster />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

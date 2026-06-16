@@ -7,15 +7,15 @@ interface User {
   id: string;
   email: string;
   name: string;
-  password: string;
+  password?: string; // Optional since we clean it out
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => void;
-  signup: (name: string, email: string, password: string) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<User>; // Fixed type
+  signup: (name: string, email: string, password: string) => Promise<User>; // Fixed type
+  logout: () => Promise<void>; // Fixed type
   me: () => Promise<User | null>;
   isLoading: boolean;
 }
@@ -29,8 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-
-  const signup = async (name: string, email: string, password: string) => { 
+  const signup = async (name: string, email: string, password: string): Promise<User> => { 
     setIsLoading(true);
     try {
       const res = await fetch("http://localhost:8080/api/auth/signup", {
@@ -42,19 +41,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         body: JSON.stringify({ name, email, password }),
       });
 
-      if (res.ok) {
-        await login(email, password);
-      } else {
-        alert("Signup failed!");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Signup failed!");
       }
-    } catch {
-      alert("Signup failed!");
+
+      // Automatically chain login on successful signup
+      return await login(email, password);
+    } catch (error) {
+      // Do NOT swallow the error with an alert. Rethrow it for Sonner.
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
       const res = await fetch("http://localhost:8080/api/auth/login", {
@@ -66,14 +68,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         body: JSON.stringify({ email, password }),
       });
 
-      if (res.ok) {
-        await me();
-        router.push("/");
-      } else {
-        alert("Login failed!");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Invalid email or password");
       }
-    } catch {
-      alert("Login failed!");
+
+      const currentUser = await me();
+      if (!currentUser) {
+        throw new Error("Failed to fetch user data after login");
+      }
+
+      router.push("/");
+      return currentUser;
+    } catch (error) {
+      throw error; // Let the page component catch this
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +104,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           id: data.id,
           email: data.email,
           name: data.name,
-          password: "",
         };
         setUser(currentUser);
         return currentUser;
@@ -112,21 +119,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const logout = () => {
-    fetch("http://localhost:8080/api/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    }).then(() => {
+  const logout = async (): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("http://localhost:8080/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error("Logout backend request failed");
+      
       setUser(null);
       router.push("/");
-    });
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
-    const fetchUser = async () => {
-      await me();
-    };
-    fetchUser();
+    me();
   }, []);
 
   return (

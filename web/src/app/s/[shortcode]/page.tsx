@@ -89,7 +89,7 @@ export default function SessionPage() {
           <div className="flex-1 flex items-center justify-center p-4 relative">
             
             {/* Context Floating Action Bar */}
-            <div className="z-20 bg-zinc-900/80 backdrop-blur border-b border-l border-zinc-800 absolute top-0 right-0 flex items-center gap-3 p-2.5 rounded-bl-2xl text-zinc-400">
+           {!isSidebarOpen && <div className="z-20 bg-zinc-900/80 backdrop-blur border-b border-l border-zinc-800 absolute top-0 right-0 flex items-center gap-3 p-2.5 rounded-bl-2xl text-zinc-400">
               <Search
                 size={18}
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -101,7 +101,7 @@ export default function SessionPage() {
                 className="hover:text-white cursor-pointer transition-colors"
               />
             </div>
-
+}
             {/* Terminal Window Frame */}
             <div className="w-full max-w-4xl aspect-square overflow-hidden grid place-items-center">
               <Player />
@@ -111,12 +111,12 @@ export default function SessionPage() {
 
         {/* Professional Slide-Out Right Sidebar */}
         <div 
-          className={`fixed top-0 right-0 h-screen w-[30%] bg-zinc-950/95 border-l border-zinc-800 backdrop-blur-md z-30 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
+          className={`fixed top-0 right-0 h-screen w-[30%] bg-[#121111] border-l border-zinc-900 backdrop-blur-md z-30 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
             isSidebarOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
           {/* Sidebar Top Header Row */}
-          <div className="w-full bg-zinc-900/50 border-b border-zinc-850 p-3 flex items-center justify-between text-zinc-400">
+          <div className="w-full bg-black p-3 flex items-center justify-between text-zinc-400">
             <span className="text-xs font-mono font-bold tracking-wider uppercase">Session Index</span>
             <PanelRight 
               size={18} 

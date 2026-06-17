@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { Pencil, Play, Share2, Search, Check } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import TerminalImage from "../../public/terminal.png";
+import Image from "next/image";
+
 
 interface Session {
   id: string;
@@ -90,7 +93,9 @@ export default function RecordingList() {
                 Colleagues. Click on a recording to view the full session.
               </p>
             </div>
-            <button className="text-black/60 hover:text-black cursor-pointer ">
+            <button
+              className="text-black/60 hover:text-black cursor-pointer "
+            >
               <Search size={25} className="" />
             </button>
           </div>
@@ -132,9 +137,16 @@ export default function RecordingList() {
               {/* PREVIEW AREA */}
               <div className="h-65 bg-black overflow-hidden relative">
                 {/* <Player content={session.preview!} mode="preview" /> */}
+                <Image
+              src={TerminalImage}
+              alt="Terminal"
+              // width={800}
+              // height={400}
+              className="relative w-full h-full object-cover"
+            />
                 <Link
                   href={`/s/${session.shortcode}`}
-                  className="w-full h-full bg-black/30 backdrop-blur-sm relative grid place-items-center z-1000"
+                  className="bg-black/30 backdrop-blur-xs absolute top-0 right-0 left-0 bottom-0 grid place-items-center z-1000"
                 >
                   <Play
                     size={64}

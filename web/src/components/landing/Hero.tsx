@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Check, Copy } from "lucide-react";
 import BgImage from "../../../public/Artz Now _ 1910437696159313939 (2).jpeg";
+import TerminalImage from "../../../public/terminal.png";
+
 import Player from "@/components/Player";
 import { useAuth } from "@/context/AuthContext";
 
@@ -118,7 +120,7 @@ export default function Hero() {
 
   {/* perspective wrapper */}
   <div
-    className="w-full max-w-3xl aspect-16/10 rounded-2xl transition-transform duration-700 hover:scale-[1.02]"
+    className="w-full max-w-3xl aspect-16/10 rounded-2xl transition-transform duration-700"
     style={{
       perspective: "1400px",
       transformStyle: "preserve-3d",
@@ -144,9 +146,16 @@ export default function Hero() {
       </div>
 
       {/* content */}
-      <div className="flex-1 bg-black/40 p-2">
+      <div className="flex-1 bg-black/40">
         {demoContent ? (
-          <Player content={demoContent} mode="preview" />
+          // <Player/>
+          <Image
+            src={TerminalImage}
+            alt="Terminal"
+            width={800}
+            height={400}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <div className="flex h-full items-center justify-center text-neutral-500 text-sm">
             LOADING STREAM...

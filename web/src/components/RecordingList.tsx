@@ -79,6 +79,18 @@ export default function RecordingList() {
     fetchSessions();
   }, []);
 
+    const handleShare = async (shortcode: string) => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const url = `${window.location.origin}/s/${shortcode}`;
+      await navigator.clipboard.writeText(url)
+      toast.success("Session URL copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy URL. Please try again.");
+    }
+  };
+
   return (
     <div
      id="recordings"
@@ -197,6 +209,7 @@ export default function RecordingList() {
                   <Share2
                     size={24}
                     className="p-1 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => handleShare(session.shortcode)}
                   />
                 </div>
               </div>

@@ -1,3 +1,5 @@
 sessions.db
 blobs/
 bin/
+config.bat
+node_modules

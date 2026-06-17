@@ -21,8 +21,10 @@ export default function Header() {
 
         {/* Navigation */}
         <div className="hidden md:flex items-center gap-8 text-sm text-zinc-400">
-          <a href="#features" className="hover:text-white transition-colors">
-            Features
+          <a href={
+            `${isAuthenticated ? "#recordings" : "#features"}`
+            } className="hover:text-white transition-colors">
+            {isAuthenticated ? "Recordings" : "Features"}
           </a>
 
           <a

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Player from "@/components/Player";
 import BackgroundImage from "../../../../public/terminalBg.jpeg";
-import { PanelRight, Search, Share2 } from "lucide-react";
+import { ChevronLeft, PanelRight, Search, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import SearchContent from "@/components/Search";
 import { PlayerProvider } from "@/hooks/usePlayer";
@@ -87,6 +87,14 @@ export default function SessionPage() {
           
           {/* Centered Player Box Wrapper */}
           <div className="flex-1 flex items-center justify-center p-4 relative">
+            <div className="z-20 bg-zinc-900/80 backdrop-blur border-b border-l border-zinc-800 absolute top-0 left-0 flex items-center gap-3 p-2.5 rounded-br-2xl text-zinc-400">
+            <ChevronLeft
+                size={20}
+                onClick={() => window.history.back()}
+                className={`cursor-pointer transition-colors ${isSidebarOpen ? "text-white" : "hover:text-white"}`}
+              />
+            
+            </div>
             
             {/* Context Floating Action Bar */}
            {!isSidebarOpen && <div className="z-20 bg-zinc-900/80 backdrop-blur border-b border-l border-zinc-800 absolute top-0 right-0 flex items-center gap-3 p-2.5 rounded-bl-2xl text-zinc-400">

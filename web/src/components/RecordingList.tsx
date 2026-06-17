@@ -80,7 +80,9 @@ export default function RecordingList() {
   }, []);
 
   return (
-    <div className="bg-gray-100">
+    <div
+     id="recordings"
+     className="bg-gray-100">
       <div className="p-2 w-[70%] mx-auto py-10">
         {!loading && sessions.length !== 0 && (
           <div className="flex justify-between items-center py-4">

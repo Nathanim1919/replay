@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import Terminal from "./Terminal"
 import Waveform from "./Waveform"
-import { Play, Pause, Maximize, Minimize, RotateCcw, Copy, Check, Terminal as TermIcon, SkipBack, SkipForward } from "lucide-react"
+import { Play, Pause, Maximize, Minimize, RotateCcw, Copy, Check, Terminal as TermIcon, SkipBack, SkipForward, Zap } from "lucide-react"
 import { usePlayer } from "@/hooks/usePlayer"
 import { toast } from "sonner"
 
@@ -25,6 +25,8 @@ export const Player = ({ mode = "full", title = "replay session" }: PlayerProps)
     terminalRef,
     speed,
     currentTelemetry,
+    skipIdle,
+    toggleSkipIdle,
   } = usePlayer()
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -224,6 +226,20 @@ export const Player = ({ mode = "full", title = "replay session" }: PlayerProps)
                 </button>
               ))}
             </div>
+
+            {/* Skip Idle Mode Toggle Pill */}
+            <button
+              onClick={toggleSkipIdle}
+              className={`px-2.5 py-1 text-xs font-mono font-medium rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ml-1.5 ${
+                skipIdle
+                  ? "bg-amber-500/15 text-amber-400 border-amber-500/40 shadow-xs"
+                  : "bg-zinc-900/80 text-zinc-400 border-zinc-800/90 hover:text-zinc-200"
+              }`}
+              title="Automatically fast-forward through inactive pauses >3s"
+            >
+              <Zap size={13} className={skipIdle ? "fill-amber-400 text-amber-400" : ""} />
+              <span>Skip Idle</span>
+            </button>
 
             {/* Timestamp & Fullscreen Toggles */}
             <div className="flex items-center gap-3 ml-auto text-xs font-mono text-zinc-400">

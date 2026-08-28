@@ -76,6 +76,7 @@ Replay bridges the gap between text logs and video screen shares. Instead of cop
 | 6. Cloud Storage & PG | ✅ Completed | PostgreSQL (`pgvector`) & S3 storage adapters (`internal/server/`) |
 | 7. Streaming Compression | ✅ Completed | Zstd stream compression (`internal/format/compress.go`) |
 | 8. Web Player & Copilot | ✅ Completed | macOS frame, hotkeys, AI Copilot drawer (`web/src/components/`) |
+| 9. Skip-Idle Playback Mode | ✅ Completed | Fast-forward active output gaps > 3s (`web/src/hooks/usePlayer.tsx`) |
 
 ---
 
@@ -83,7 +84,7 @@ Replay bridges the gap between text logs and video screen shares. Instead of cop
 
 Below is the planned roadmap for **Phase 4**:
 
-1. **Skip-Idle Playback Mode (`web/src/hooks/usePlayer.tsx`):**
+1. **Skip-Idle Playback Mode (`web/src/hooks/usePlayer.tsx`):** ✅ Completed
    - Automatically fast-forward through long pauses or silent inactive periods (>3s) in terminal recordings for faster review.
 
 2. **Embed Player Route (`/embed/[shortcode]`):**

@@ -8,6 +8,7 @@ interface PlayerContextType {
   currentTime: number
   duration: number
   speed: number
+  skipIdle: boolean
   searchIndex: SearchIndex | null
   waveform: number[]
   terminalRef: React.RefObject<any>
@@ -16,6 +17,7 @@ interface PlayerContextType {
   pause: () => void
   seek: (time: number) => void
   changeSpeed: (speed: number) => void
+  toggleSkipIdle: () => void
 }
 
 const PlayerContext = createContext<PlayerContextType | null>(null)
@@ -26,6 +28,7 @@ export function PlayerProvider({ content, children }: { content: string; childre
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
+  const [skipIdle, setSkipIdle] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [currentTelemetry, setCurrentTelemetry] = useState<TelemetryData | null>(null)
 
@@ -34,8 +37,14 @@ export function PlayerProvider({ content, children }: { content: string; childre
   const lastReplayTime = useRef<number>(0)
   const eventIndex = useRef(0)
   const speedRef = useRef(speed)
+  const skipIdleRef = useRef(skipIdle)
 
   useEffect(() => { speedRef.current = speed }, [speed])
+  useEffect(() => { skipIdleRef.current = skipIdle }, [skipIdle])
+
+  const toggleSkipIdle = useCallback(() => {
+    setSkipIdle((prev) => !prev)
+  }, [])
 
   const duration = session.events.at(-1)?.time ?? 0
   const waveform = useMemo(() => computeWaveform(session.events, 150), [session])
@@ -49,7 +58,7 @@ export function PlayerProvider({ content, children }: { content: string; childre
   const tick = useCallback(() => {
     const now = Date.now()
     const delta = (now - lastWallTime.current) / 1000
-    const replayTime = lastReplayTime.current + delta * speedRef.current
+    let replayTime = lastReplayTime.current + delta * speedRef.current
     const events = session.events
 
     while (eventIndex.current < events.length && events[eventIndex.current].time <= replayTime) {
@@ -62,14 +71,24 @@ export function PlayerProvider({ content, children }: { content: string; childre
       eventIndex.current++
     }
 
+    // Skip-idle playback logic: If next event is > 3s ahead, advance replayTime automatically
+    if (skipIdleRef.current && eventIndex.current < events.length) {
+      const nextEventTime = events[eventIndex.current].time
+      if (nextEventTime - replayTime > 3.0) {
+        replayTime = Math.max(replayTime, nextEventTime - 0.2)
+        lastReplayTime.current = replayTime
+        lastWallTime.current = now
+      }
+    }
+
     setCurrentTime(replayTime)
 
-    if (eventIndex.current >= events.length) {
+    if (eventIndex.current >= events.length && replayTime >= duration) {
       setIsPlaying(false)
       return
     }
     rafRef.current = requestAnimationFrame(tick)
-  }, [session])
+  }, [session, duration])
 
   const play = useCallback(() => {
     lastWallTime.current = Date.now()
@@ -142,8 +161,8 @@ export function PlayerProvider({ content, children }: { content: string; childre
 
   return (
     <PlayerContext.Provider value={{
-      isPlaying, currentTime, duration, speed, searchIndex, waveform, terminalRef, currentTelemetry,
-      play, pause, seek, changeSpeed
+      isPlaying, currentTime, duration, speed, skipIdle, searchIndex, waveform, terminalRef, currentTelemetry,
+      play, pause, seek, changeSpeed, toggleSkipIdle
     }}>
       {children}
     </PlayerContext.Provider>

@@ -32,16 +32,16 @@ func main() {
 	}
 
 	switch args[0] {
-case "help":
+	case "help":
 		// ANSI Escape Color Codes
 		const (
-			Reset     = "\033[0m"
-			Bold      = "\033[1m"
-			Dim       = "\033[2m"
-			Blue      = "\033[38;5;39m"  // Premium Cyan/Blue
-			Indigo    = "\033[38;5;63m"  // Deep Brand Accent
-			Green     = "\033[38;5;78m"  // Success Mint
-			Yellow    = "\033[38;5;214m" // Warning Amber
+			Reset  = "\033[0m"
+			Bold   = "\033[1m"
+			Dim    = "\033[2m"
+			Blue   = "\033[38;5;39m"  // Premium Cyan/Blue
+			Indigo = "\033[38;5;63m"  // Deep Brand Accent
+			Green  = "\033[38;5;78m"  // Success Mint
+			Yellow = "\033[38;5;214m" // Warning Amber
 		)
 
 		// 1. High-Impact ASCII Logo Line Art
@@ -65,6 +65,7 @@ case "help":
 		fmt.Printf("%sCORE COMMANDS:%s\n", Bold+Blue, Reset)
 		fmt.Printf("  %s%-18s%s %sRecord an active shell session to a stream file%s\n", Green, "record [file]", Reset, Dim, Reset)
 		fmt.Printf("  %s%-18s%s %sPlay back a local recording inside your terminal%s\n", Green, "play <file> [spd]", Reset, Dim, Reset)
+		fmt.Printf("  %s%-18s%s %sFork a recorded session into a live interactive shell%s\n", Green, "fork <file> [time]", Reset, Dim, Reset)
 		fmt.Printf("  %s%-18s%s %sUpload and stream a recording to the cloud%s\n", Green, "upload <file>", Reset, Dim, Reset)
 		fmt.Println()
 
@@ -94,7 +95,6 @@ case "help":
 		fmt.Printf("Verify at: %s\n", resp.VerificationURI)
 		fmt.Println("Waiting for approval in the browser...")
 
-		// Using the dynamic ServerURL here
 		session, err := client.PollDeviceAuth(ServerURL, resp.DeviceCode, resp.Interval, resp.ExpiresIn)
 		if err != nil {
 			fmt.Printf("Login failed: %v\n", err)
@@ -128,6 +128,37 @@ case "help":
 		}
 		os.Exit(0)
 
+	case "fork":
+		if len(args) < 2 {
+			fmt.Println("Usage: replay fork <file> [time_offset_seconds]")
+			os.Exit(1)
+		}
+		filePath := args[1]
+		var targetTime float64
+		if len(args) >= 3 {
+			if parsed, err := strconv.ParseFloat(args[2], 64); err == nil {
+				targetTime = parsed
+			}
+		}
+
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			fmt.Printf("Error reading file: %v\n", err)
+			os.Exit(1)
+		}
+
+		forkState, err := recorder.ExtractForkState(data, targetTime)
+		if err != nil {
+			fmt.Printf("Error extracting fork state: %v\n", err)
+			os.Exit(1)
+		}
+
+		if err := recorder.LaunchForkedSession(forkState); err != nil {
+			fmt.Printf("Error running forked session: %v\n", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+
 	// Protected commands: These require a valid session context loaded first
 	case "record", "upload":
 		session, err := lib.LoadSession()
@@ -137,7 +168,7 @@ case "help":
 		}
 
 		switch args[0] {
-case "record":
+		case "record":
 			outputPath := "recording.replay"
 			opts := recorder.DefaultOptions()
 
@@ -160,7 +191,6 @@ case "record":
 			}
 			fmt.Printf("Recording saved to %s\n", outputPath)
 
-			// Using dynamic ServerURL & session token
 			url, err := client.Upload(ServerURL, outputPath, session.AccessToken)
 			if err != nil {
 				fmt.Printf("Upload failed: %v (file saved locally)\n", err)
@@ -174,7 +204,6 @@ case "record":
 				fmt.Println("Usage: replay upload <file>")
 				os.Exit(1)
 			}
-			// Using dynamic ServerURL & session token
 			url, err := client.Upload(ServerURL, args[1], session.AccessToken)
 			if err != nil {
 				fmt.Printf("Error uploading: %v\n", err)

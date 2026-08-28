@@ -5,9 +5,10 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Player from "@/components/Player";
 import BackgroundImage from "../../../../public/terminalBg.jpeg";
-import { ChevronLeft, PanelRight, Search, Share2 } from "lucide-react";
+import { ChevronLeft, PanelRight, Search, Share2, Sparkles, Terminal } from "lucide-react";
 import { toast } from "sonner";
 import SearchContent from "@/components/Search";
+import AICopilot from "@/components/AICopilot";
 import { PlayerProvider } from "@/hooks/usePlayer";
 
 // PageLayout wrapper component
@@ -31,8 +32,9 @@ export default function SessionPage() {
   const [content, setContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  // State to manage sidebar open/close visibility
+  // State to manage sidebar open/close visibility & active tab
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"search" | "ai">("search");
 
   useEffect(() => {
     if (!shortcode) return;
@@ -51,7 +53,7 @@ export default function SessionPage() {
 
     try {
       const url = `${window.location.origin}/s/${shortcode}`;
-      await navigator.clipboard.writeText(url)
+      await navigator.clipboard.writeText(url);
       toast.success("Session URL copied to clipboard!");
     } catch {
       toast.error("Failed to copy URL. Please try again.");
@@ -88,28 +90,29 @@ export default function SessionPage() {
           {/* Centered Player Box Wrapper */}
           <div className="flex-1 flex items-center justify-center p-4 relative">
             <div className="z-20 bg-zinc-900/80 backdrop-blur border-b border-l border-zinc-800 absolute top-0 left-0 flex items-center gap-3 p-2.5 rounded-br-2xl text-zinc-400">
-            <ChevronLeft
+              <ChevronLeft
                 size={20}
                 onClick={() => window.history.back()}
                 className={`cursor-pointer transition-colors ${isSidebarOpen ? "text-white" : "hover:text-white"}`}
               />
-            
             </div>
             
             {/* Context Floating Action Bar */}
-           {!isSidebarOpen && <div className="z-20 bg-zinc-900/80 backdrop-blur border-b border-l border-zinc-800 absolute top-0 right-0 flex items-center gap-3 p-2.5 rounded-bl-2xl text-zinc-400">
-              <Search
-                size={18}
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className={`cursor-pointer transition-colors ${isSidebarOpen ? "text-white" : "hover:text-white"}`}
-              />
-              <Share2
-                onClick={handleShare}
-                size={18}
-                className="hover:text-white cursor-pointer transition-colors"
-              />
-            </div>
-}
+            {!isSidebarOpen && (
+              <div className="z-20 bg-zinc-900/80 backdrop-blur border-b border-l border-zinc-800 absolute top-0 right-0 flex items-center gap-3 p-2.5 rounded-bl-2xl text-zinc-400">
+                <Search
+                  size={18}
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  className={`cursor-pointer transition-colors ${isSidebarOpen ? "text-white" : "hover:text-white"}`}
+                />
+                <Share2
+                  onClick={handleShare}
+                  size={18}
+                  className="hover:text-white cursor-pointer transition-colors"
+                />
+              </div>
+            )}
+
             {/* Terminal Window Frame */}
             <div className="w-full max-w-4xl aspect-square overflow-hidden grid place-items-center">
               <Player />
@@ -123,19 +126,37 @@ export default function SessionPage() {
             isSidebarOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
-          {/* Sidebar Top Header Row */}
-          <div className="w-full bg-black p-3 flex items-center justify-between text-zinc-400">
-            <span className="text-xs font-mono font-bold tracking-wider uppercase">Session Index</span>
+          {/* Sidebar Top Header Row with Tabs */}
+          <div className="w-full bg-black p-2 flex items-center justify-between border-b border-zinc-800 text-zinc-400 font-mono text-xs">
+            <div className="flex gap-1">
+              <button
+                onClick={() => setActiveTab("search")}
+                className={`px-3 py-1 rounded font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === "search" ? "bg-zinc-800 text-white" : "hover:text-zinc-200"
+                }`}
+              >
+                <Search size={14} /> Search
+              </button>
+              <button
+                onClick={() => setActiveTab("ai")}
+                className={`px-3 py-1 rounded font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === "ai" ? "bg-zinc-800 text-orange-400" : "hover:text-zinc-200"
+                }`}
+              >
+                <Sparkles size={14} /> AI Copilot
+              </button>
+            </div>
+
             <PanelRight 
               size={18} 
               onClick={() => setIsSidebarOpen(false)}
-              className="cursor-pointer hover:text-white transition-colors"
+              className="cursor-pointer hover:text-white transition-colors mr-2"
             />
           </div>
           
           {/* Scrollable Results Content Box */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <SearchContent />
+          <div className="flex-1 overflow-y-auto">
+            {activeTab === "search" ? <SearchContent /> : <AICopilot />}
           </div>
         </div>
       </PlayerProvider>

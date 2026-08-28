@@ -4,22 +4,19 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from 'sonner';
 
-
 const LexendFont = Lexend({
   variable: "--font-lexend",
   subsets: ["latin"],
+  display: "swap",
+  adjustFontFallback: false,
 });
- 
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+  adjustFontFallback: false,
 });
-
-// const manrope = Manrope({
-//   variable: "--font-manrope",
-//   subsets: ["latin"],
-// });
 
 export const metadata: Metadata = {
   title: "Replay",

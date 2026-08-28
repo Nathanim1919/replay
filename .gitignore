@@ -3,3 +3,4 @@ blobs/
 bin/
 config.bat
 node_modules
+*.replay

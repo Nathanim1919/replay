@@ -94,8 +94,17 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// If body is Zstd compressed, decompress to extract metadata header
+	uncompressedBody := body
+	if format.IsZstdCompressed(body) {
+		decomp, err := format.DecompressZstd(body)
+		if err == nil {
+			uncompressedBody = decomp
+		}
+	}
+
 	// Find the first newline
-	idx := bytes.IndexByte(body, '\n')
+	idx := bytes.IndexByte(uncompressedBody, '\n')
 	if idx == -1 {
 		http.Error(w, "Invalid replay file", http.StatusBadRequest)
 		return
@@ -103,7 +112,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	// Parse header from the first line
 	var header format.Header
-	err = json.Unmarshal(body[:idx], &header)
+	err = json.Unmarshal(uncompressedBody[:idx], &header)
 	if err != nil {
 		http.Error(w, "Invalid replay header", http.StatusBadRequest)
 		return

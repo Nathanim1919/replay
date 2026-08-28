@@ -77,6 +77,7 @@ Replay bridges the gap between text logs and video screen shares. Instead of cop
 | 7. Streaming Compression | ✅ Completed | Zstd stream compression (`internal/format/compress.go`) |
 | 8. Web Player & Copilot | ✅ Completed | macOS frame, hotkeys, AI Copilot drawer (`web/src/components/`) |
 | 9. Skip-Idle Playback Mode | ✅ Completed | Fast-forward active output gaps > 3s (`web/src/hooks/usePlayer.tsx`) |
+| 10. Embed Player Route | ✅ Completed | Lightweight iframe player route (`web/src/app/embed/[shortcode]/page.tsx`) |
 
 ---
 
@@ -87,7 +88,7 @@ Below is the planned roadmap for **Phase 4**:
 1. **Skip-Idle Playback Mode (`web/src/hooks/usePlayer.tsx`):** ✅ Completed
    - Automatically fast-forward through long pauses or silent inactive periods (>3s) in terminal recordings for faster review.
 
-2. **Embed Player Route (`/embed/[shortcode]`):**
+2. **Embed Player Route (`/embed/[shortcode]`):** ✅ Completed
    - Create a lightweight, iframe-embeddable player route without top navigation bars, optimized for embedding inside GitHub PR descriptions and documentation sites.
 
 3. **Dynamic Terminal Window Resizing (`"r"` events):**

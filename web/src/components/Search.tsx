@@ -22,7 +22,7 @@ export default function SearchContent() {
 
   const handleSearch = (value: string) => {
     setQuery(value)
-    if (value.length >= 2) {
+    if (value.length >= 2 && index) {
       setResults(searchIndex(index, value))
     } else {
       setResults([])

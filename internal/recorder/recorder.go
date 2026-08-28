@@ -1,39 +1,78 @@
 package recorder
 
 import (
+	"os"
+	"os/exec"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/Nathanim1919/replay/internal/format"
 	"github.com/creack/pty"
 	"golang.org/x/term"
-	"os"
-	"os/exec"
-	"time"
 )
 
+// RecorderOptions configures recorder runtime behavior.
+type RecorderOptions struct {
+	RecordInput        bool
+	EnableDLP          bool
+	CheckpointInterval time.Duration
+	TelemetryInterval  time.Duration
+}
+
+// DefaultOptions returns production-ready default recorder settings.
+func DefaultOptions() RecorderOptions {
+	return RecorderOptions{
+		RecordInput:        true,
+		EnableDLP:          true,
+		CheckpointInterval: 30 * time.Second,
+		TelemetryInterval:  5 * time.Second,
+	}
+}
+
 type Recorder struct {
-	writer    *format.ReplayWriter
-	startTime time.Time
-	ptyFile   *os.File
-	oldState  *term.State
+	opts              RecorderOptions
+	writer            *format.ReplayWriter
+	startTime         time.Time
+	ptyFile           *os.File
+	oldState          *term.State
+	scrubber          *Scrubber
+	checkpointTracker *CheckpointTracker
+	stopCh            chan struct{}
 }
 
 func NewRecorder() *Recorder {
-	return &Recorder{}
+	return NewRecorderWithOptions(DefaultOptions())
+}
+
+func NewRecorderWithOptions(opts RecorderOptions) *Recorder {
+	var scrubber *Scrubber
+	if opts.EnableDLP {
+		scrubber = NewScrubber()
+	}
+	return &Recorder{
+		opts:     opts,
+		scrubber: scrubber,
+		stopCh:   make(chan struct{}),
+	}
 }
 
 func (r *Recorder) Start(outputPath string) error {
-	// step 1: Detect shell:
+	// Step 1: Detect shell
 	shell := os.Getenv("SHELL")
 	if shell == "" {
 		shell = "/bin/bash"
 	}
 
-	// step 2: Get current terminal size:
+	// Step 2: Get current terminal size
 	width, height, err := term.GetSize(int(os.Stdin.Fd()))
 	if err != nil {
-		return err
+		width, height = 80, 24
 	}
 
-	// Step 3: Save terminal state and set raw mode:
+	r.checkpointTracker = NewCheckpointTracker(width, height)
+
+	// Step 3: Save terminal state and set raw mode
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
 		return err
@@ -44,13 +83,8 @@ func (r *Recorder) Start(outputPath string) error {
 		term.Restore(int(os.Stdin.Fd()), r.oldState)
 	}
 
-	// Step 4: Spawn PTY with shell:
+	// Step 4: Spawn PTY with shell
 	cmd := exec.Command(shell)
-	/**
-		 — pty.Start creates a PTY pair, attaches shell to slave side
-	     — Returns the master FD as *os.File
-	     — Store in r.ptyFile
-	*/
 	ptyFile, err := pty.Start(cmd)
 	if err != nil {
 		restore()
@@ -58,18 +92,13 @@ func (r *Recorder) Start(outputPath string) error {
 	}
 	r.ptyFile = ptyFile
 
-	// Step 5: Set PTY size to match terminal size:
-	err = pty.Setsize(ptyFile, &pty.Winsize{
+	// Step 5: Set PTY size
+	_ = pty.Setsize(ptyFile, &pty.Winsize{
 		Rows: uint16(height),
 		Cols: uint16(width),
 	})
 
-	if err != nil {
-		restore()
-		return err
-	}
-
-	// Step 6: Create writer and write header:
+	// Step 6: Create format writer & write header
 	writer, err := format.NewReplayWriter(outputPath)
 	if err != nil {
 		restore()
@@ -83,10 +112,6 @@ func (r *Recorder) Start(outputPath string) error {
 		Timestamp: time.Now().Unix(),
 		Duration:  0,
 		Shell:     shell,
-		// Term: "xterm-256color",
-		// Title: "debugging api-server crashloop",
-		// Env: os.Environ(),
-		// Checkpoints: []float64{},
 	}
 
 	err = writer.WriteHeader(header)
@@ -95,44 +120,142 @@ func (r *Recorder) Start(outputPath string) error {
 		return err
 	}
 	r.writer = writer
-
-	// Step 7: Start recording:
 	r.startTime = time.Now()
 
-	// Allocate a buffer for reading
-	buf := make([]byte, 4096)
-
-	// INPUT: runs in background
+	// Step 7: Listen for terminal resize (SIGWINCH)
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGWINCH)
 	go func() {
-		inputBuf := make([]byte, 4096) // separate buffer!
+		for {
+			select {
+			case <-r.stopCh:
+				return
+			case <-sigCh:
+				w, h, e := term.GetSize(int(os.Stdin.Fd()))
+				if e == nil {
+					_ = pty.Setsize(r.ptyFile, &pty.Winsize{Rows: uint16(h), Cols: uint16(w)})
+					r.checkpointTracker.UpdateSize(w, h)
+					elapsed := time.Since(r.startTime).Seconds()
+					_ = r.writer.WriteEvent(format.Event{
+						Time: elapsed,
+						Type: format.EventResize,
+						Size: &format.TerminalSize{Width: w, Height: h},
+					})
+				}
+			}
+		}
+	}()
+
+	// Step 8: Periodic OS Telemetry ticker ("p" events)
+	if r.opts.TelemetryInterval > 0 {
+		go func() {
+			ticker := time.NewTicker(r.opts.TelemetryInterval)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-r.stopCh:
+					return
+				case <-ticker.C:
+					elapsed := time.Since(r.startTime).Seconds()
+					telemetry := CollectTelemetry(cmd.Process.Pid, shell)
+					_ = r.writer.WriteEvent(format.Event{
+						Time: elapsed,
+						Type: format.EventTelemetry,
+						Telemetry: &format.TelemetryData{
+							PID:    telemetry.PID,
+							CWD:    telemetry.CWD,
+							Cmd:    telemetry.Cmd,
+							CPU:    telemetry.CPU,
+							Memory: telemetry.Memory,
+						},
+					})
+				}
+			}
+		}()
+	}
+
+	// Step 9: Periodic Terminal Checkpoint ticker ("c" events)
+	if r.opts.CheckpointInterval > 0 {
+		go func() {
+			ticker := time.NewTicker(r.opts.CheckpointInterval)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-r.stopCh:
+					return
+				case <-ticker.C:
+					elapsed := time.Since(r.startTime).Seconds()
+					state := r.checkpointTracker.GenerateSnapshot()
+					_ = r.writer.WriteEvent(format.Event{
+						Time:  elapsed,
+						Type:  format.EventCheckpoint,
+						State: &state,
+					})
+				}
+			}
+		}()
+	}
+
+	// Step 10: Forward INPUT (stdin -> PTY)
+	go func() {
+		inputBuf := make([]byte, 4096)
 		for {
 			n, err := os.Stdin.Read(inputBuf)
 			if err != nil {
 				break
 			}
-			r.ptyFile.Write(inputBuf[:n])
+
+			// Forward to shell PTY
+			_, _ = r.ptyFile.Write(inputBuf[:n])
+
+			// Record input event if enabled
+			if r.opts.RecordInput {
+				elapsed := time.Since(r.startTime).Seconds()
+				data := inputBuf[:n]
+				if r.scrubber != nil {
+					data = r.scrubber.Scrub(data)
+				}
+				_ = r.writer.WriteEvent(format.Event{
+					Time:    elapsed,
+					Type:    format.EventInput,
+					RawData: data,
+				})
+			}
 		}
 	}()
 
-	// OUTPUT: runs here, blocks until bash exits
+	// Step 11: Forward OUTPUT (PTY -> stdout) & Record
+	buf := make([]byte, 4096)
 	for {
 		n, err := r.ptyFile.Read(buf)
 		if err != nil {
 			break
 		}
-		os.Stdout.Write(buf[:n])
 
+		// Forward bytes to user stdout
+		_, _ = os.Stdout.Write(buf[:n])
+
+		// Update checkpoint line tracker
+		r.checkpointTracker.ProcessOutput(buf[:n])
+
+		// Apply DLP Scrubbing
+		data := buf[:n]
+		if r.scrubber != nil {
+			data = r.scrubber.Scrub(data)
+		}
+
+		// Record output event
 		elapsed := time.Since(r.startTime).Seconds()
-		r.writer.WriteEvent(format.Event{
+		_ = r.writer.WriteEvent(format.Event{
 			Time:    elapsed,
 			Type:    format.EventOutput,
-			RawData: buf[:n],
+			RawData: data,
 		})
 	}
 
-	// Bash has exited — clean up
+	// Cleanup
+	close(r.stopCh)
+	signal.Stop(sigCh)
 	restore()
-	r.writer.Close()
-	return nil
-
+	return r.writer.Close()
 }

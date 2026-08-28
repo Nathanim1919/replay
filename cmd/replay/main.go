@@ -139,17 +139,27 @@ case "help":
 		switch args[0] {
 case "record":
 			outputPath := "recording.replay"
-			if len(args) >= 2 {
-				outputPath = args[1]
+			opts := recorder.DefaultOptions()
+
+			for i := 1; i < len(args); i++ {
+				arg := args[i]
+				if arg == "--no-input" {
+					opts.RecordInput = false
+				} else if arg == "--no-scrub" {
+					opts.EnableDLP = false
+				} else if len(arg) > 0 && arg[0] != '-' {
+					outputPath = arg
+				}
 			}
-			rec := recorder.NewRecorder()
+
+			rec := recorder.NewRecorderWithOptions(opts)
 			err := rec.Start(outputPath)
 			if err != nil {
 				fmt.Printf("Error recording: %v\n", err)
 				os.Exit(1)
 			}
 			fmt.Printf("Recording saved to %s\n", outputPath)
-			
+
 			// Using dynamic ServerURL & session token
 			url, err := client.Upload(ServerURL, outputPath, session.AccessToken)
 			if err != nil {

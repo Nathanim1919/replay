@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, useMemo, useCallback, useRef, useEffect } from "react"
-import { parseReplay, computeWaveform, buildSearchIndex, SearchIndex } from "@/lib/replay-parser"
+import { parseReplay, computeWaveform, buildSearchIndex, SearchIndex, TelemetryData, ReplayEvent } from "@/lib/replay-parser"
 
 interface PlayerContextType {
   isPlaying: boolean
@@ -11,6 +11,7 @@ interface PlayerContextType {
   searchIndex: SearchIndex | null
   waveform: number[]
   terminalRef: React.RefObject<any>
+  currentTelemetry: TelemetryData | null
   play: () => void
   pause: () => void
   seek: (time: number) => void
@@ -26,6 +27,7 @@ export function PlayerProvider({ content, children }: { content: string; childre
   const [isPlaying, setIsPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
   const [currentTime, setCurrentTime] = useState(0)
+  const [currentTelemetry, setCurrentTelemetry] = useState<TelemetryData | null>(null)
 
   const rafRef = useRef<number | null>(null)
   const lastWallTime = useRef<number>(0)
@@ -52,7 +54,11 @@ export function PlayerProvider({ content, children }: { content: string; childre
 
     while (eventIndex.current < events.length && events[eventIndex.current].time <= replayTime) {
       const e = events[eventIndex.current]
-      if (e.type === "o" && e.data) terminalRef.current?.write(e.data)
+      if (e.type === "o" && e.data) {
+        terminalRef.current?.write(e.data)
+      } else if (e.type === "p" && e.telemetry) {
+        setCurrentTelemetry(e.telemetry)
+      }
       eventIndex.current++
     }
 
@@ -77,21 +83,52 @@ export function PlayerProvider({ content, children }: { content: string; childre
     setIsPlaying(false)
   }, [])
 
-  const seek = useCallback((time: number) => {
+  const seek = useCallback((targetTime: number) => {
     clear()
     const events = session.events
+
+    // 1. Locate nearest checkpoint event before or at targetTime
+    let bestCheckpointIdx = -1
     for (let i = 0; i < events.length; i++) {
-      if (events[i].time > time) break
-      if (events[i].type === "o" && events[i].data) terminalRef.current?.write(events[i].data)
+      if (events[i].time > targetTime) break
+      if (events[i].type === "c" && events[i].checkpoint) {
+        bestCheckpointIdx = i
+      }
+    }
+
+    let startIdx = 0
+    if (bestCheckpointIdx !== -1) {
+      const cpEvent = events[bestCheckpointIdx]
+      if (cpEvent.checkpoint?.screen_buffer) {
+        terminalRef.current?.write(cpEvent.checkpoint.screen_buffer)
+      }
+      startIdx = bestCheckpointIdx + 1
+    }
+
+    // 2. Replay delta events from startIdx up to targetTime
+    let latestTelem: TelemetryData | null = null
+    for (let i = startIdx; i < events.length; i++) {
+      if (events[i].time > targetTime) break
+      const e = events[i]
+      if (e.type === "o" && e.data) {
+        terminalRef.current?.write(e.data)
+      } else if (e.type === "p" && e.telemetry) {
+        latestTelem = e.telemetry
+      }
       eventIndex.current = i + 1
     }
-    setCurrentTime(time)
+
+    if (latestTelem) {
+      setCurrentTelemetry(latestTelem)
+    }
+
+    setCurrentTime(targetTime)
     if (isPlaying) {
       lastWallTime.current = Date.now()
-      lastReplayTime.current = time
+      lastReplayTime.current = targetTime
       rafRef.current = requestAnimationFrame(tick)
     } else {
-      lastReplayTime.current = time
+      lastReplayTime.current = targetTime
     }
   }, [session, isPlaying, tick, clear])
 
@@ -105,7 +142,7 @@ export function PlayerProvider({ content, children }: { content: string; childre
 
   return (
     <PlayerContext.Provider value={{
-      isPlaying, currentTime, duration, speed, searchIndex, waveform, terminalRef,
+      isPlaying, currentTime, duration, speed, searchIndex, waveform, terminalRef, currentTelemetry,
       play, pause, seek, changeSpeed
     }}>
       {children}

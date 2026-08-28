@@ -19,12 +19,26 @@ export interface MarkerData {
   Label: string
 }
 
+export interface TelemetryData {
+  pid: number
+  cwd: string
+  cmd?: string
+  cpu_pct?: number
+  mem_mb?: number
+}
+
+export interface CheckpointData {
+  screen_buffer: string
+}
+
 export interface ReplayEvent {
   time: number
-  type: "o" | "i" | "r" | "c" | "m"
+  type: "o" | "i" | "r" | "c" | "m" | "p"
   data?: string
   size?: TerminalSize
   marker?: MarkerData
+  telemetry?: TelemetryData
+  checkpoint?: CheckpointData
 }
 
 export interface ReplaySession {
@@ -69,6 +83,12 @@ export function parseReplay(content: string): ReplaySession {
         break;
       case "m":
         event.marker = arr[2] as MarkerData;
+        break;
+      case "c":
+        event.checkpoint = arr[2] as CheckpointData;
+        break;
+      case "p":
+        event.telemetry = arr[2] as TelemetryData;
         break;
     }
 

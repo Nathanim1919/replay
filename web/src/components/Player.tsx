@@ -23,6 +23,7 @@ export const Player = ({ mode = "full" }: PlayerProps) => {
     currentTime,
     terminalRef,
     speed,
+    currentTelemetry,
   } = usePlayer()
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -88,6 +89,25 @@ export const Player = ({ mode = "full" }: PlayerProps) => {
     >
       <div className="flex-1 min-h-0 w-full relative group overflow-hidden bg-black">
         <Terminal ref={terminalRef} width={80} height={24} preview={false} />
+
+        {/* Live OS Telemetry Context Overlay */}
+        {currentTelemetry && (
+          <div className="absolute top-3 right-3 z-20 flex items-center gap-2 bg-zinc-950/80 backdrop-blur-md border border-zinc-800/80 px-2.5 py-1 rounded-full text-[11px] font-mono text-zinc-300 shadow-md transition-all">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-zinc-400">DIR:</span>
+            <span className="text-white font-medium max-w-40 truncate">{currentTelemetry.cwd}</span>
+            <span className="text-zinc-600">|</span>
+            <span className="text-zinc-400">PID:</span>
+            <span className="text-zinc-200">{currentTelemetry.pid}</span>
+            {Boolean(currentTelemetry.mem_mb) && (currentTelemetry.mem_mb ?? 0) > 0 && (
+              <>
+                <span className="text-zinc-600">|</span>
+                <span className="text-zinc-400">RAM:</span>
+                <span className="text-orange-400 font-semibold">{currentTelemetry.mem_mb?.toFixed(1)}MB</span>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Playback Control Overlay */}
         <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/95 via-black/70 to-transparent p-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">

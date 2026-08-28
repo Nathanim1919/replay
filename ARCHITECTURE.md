@@ -6,7 +6,7 @@
 
 ## 1. System Overview
 
-Replay bridges the gap between text logs and video screen shares. Instead of copying walls of unformatted terminal text into Slack or recording heavy video files, developers run `replay record`. Replay streams microsecond-timestamped terminal events into a `.replay` file, which is uploaded and played back with O(1) seeking, text search, waveform visualization, and synced OS-level telemetry.
+Replay bridges the gap between text logs and video screen shares. Instead of copying walls of unformatted terminal text into Slack or recording heavy video files, developers run `replay record`. Replay streams microsecond-timestamped terminal events into a `.replay` file, which is uploaded and played back with $O(1)$ seeking, text search, waveform visualization, and synced OS-level telemetry.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -44,35 +44,29 @@ Replay bridges the gap between text logs and video screen shares. Instead of cop
 
 ---
 
-## 2. Current Implementation Status
+## 2. What We Have Built (Completed Features)
 
-### 2.1. CLI Recorder & Client (`cmd/replay`, `internal/recorder`)
-- **PTY Proxying:** Spawns a child shell (`/bin/bash` or `$SHELL`) attached to a master PTY using `github.com/creack/pty` and puts user terminal in raw mode.
-- **DLP Redaction:** Real-time scrubbing of AWS keys, JWT tokens, and database passwords at the source (`internal/recorder/scrub.go`).
-- **OS Telemetry:** Emits periodic `"p"` events containing working directory (`cwd`), process ID (`pid`), CPU, and memory usage (`internal/recorder/telemetry.go`).
-- **Checkpoints:** Generates $O(1)$ terminal state snapshots (`"c"` events) for instant web playback seeking (`internal/recorder/checkpoint.go`).
-- **Session Forking Engine:** `replay fork <file> [time]` command extracts shell context and launches an interactive subshell at timestamp $T$ (`internal/recorder/fork.go`).
+### Phase 1: Engine Hardening & Telemetry
+- **Inline Data Loss Prevention (DLP) Scrubbing (`internal/recorder/scrub.go`):** Real-time interception and redaction of sensitive credentials (AWS keys, JWT tokens, DB passwords) before writing to stream.
+- **$O(1)$ Terminal Checkpoint Snapshots (`internal/recorder/checkpoint.go`):** Generates screen buffer snapshots (`"c"` events) every 30s for sub-100ms instant seek in the web player.
+- **OS Process Telemetry (`internal/recorder/telemetry.go`):** Polls system metrics (`"p"` events) capturing active working directory (`cwd`), PID, CPU %, and memory usage.
 
-### 2.2. Event Stream File Format & Compression (`internal/format`)
-- **Zstd Streaming:** High-performance Zstd compression for compressed `.replay` stream storage.
-- **JSON Lines Format:** Line 1 (Header) + Lines 2+ (Events `"o"`, `"i"`, `"r"`, `"c"`, `"m"`, `"p"`).
+### Phase 2: Cloud Storage & Database Layer
+- **PostgreSQL + `pgvector` Integration (`internal/server/postgres.go`):** Production database layer supporting full metadata persistence and vector embedding storage for semantic search.
+- **S3 / Cloudflare R2 Blob Storage (`internal/server/s3blob.go`):** AWS S3 blob adapter with local filesystem fallback for scalable recording storage.
+- **Zstd Streaming Compression (`internal/format/compress.go`):** High-performance Zstd compression reducing `.replay` stream file sizes by 80–90%.
+- **Docker Compose Stack (`docker-compose.yml`):** Complete one-command container stack (`server`, `web`, `postgres`, `minio`).
 
-### 2.3. Backend API & Storage Engine (`cmd/server`, `internal/server`)
-- **Pluggable Storage Backends:**
-  - `SQLiteStore` / `PostgresStore` (PostgreSQL + `pgvector` extension for metadata & AI vector search).
-  - `LocalBlobStore` / `S3BlobStore` (S3/Cloudflare R2 cloud blob storage adapter).
-- **Authentication & Security:** JWT authentication, Bcrypt password hashing, and OAuth 2.0 CLI Device Authorization Flow.
-
-### 2.4. Web Player & AI Copilot (`web/`)
-- **macOS Window Frame & Telemetry:** Clean top header with traffic light controls, title badge, and live OS telemetry overlay pill.
-- **Playback Engine & Waveform:** Audio-style activity bars with hover timestamp tooltips, hotkey controls (`Space`, `←`/`→`, `F`), and speed selectors (`0.5x`–`8x`).
-- **AI Copilot Drawer:** Interactive **"AI Copilot"** tab in the player drawer for asking questions about the recorded terminal session (`web/src/components/AICopilot.tsx`).
+### Phase 3: AI Intelligence Pipeline & Interactive Session Forking
+- **AI Session Summarizer (`internal/ai/summarizer.go`):** Automated analysis engine extracting executed shell commands, detecting error log occurrences, and building executive summaries.
+- **CLI Interactive Session Forking (`internal/recorder/fork.go`):** `replay fork <file> [time]` command reads replay checkpoint state and launches an interactive subshell directly in the session's recorded working directory context.
+- **Web AI Copilot & Apple-Grade UI (`web/src/components/AICopilot.tsx`, `Player.tsx`):** macOS-style window titlebar with traffic light buttons, live OS telemetry overlay pill, activity waveform with timestamp hover tooltips, keyboard hotkeys (`Space`, `←`/`→`, `F`), and an interactive AI Copilot tab in the player drawer.
 
 ---
 
 ## 3. Implementation Matrix
 
-| Component | Status | Implementation Details |
+| Pillar | Status | Implementation Details |
 |---|---|---|
 | 1. DLP / Secret Scrub | ✅ Completed | Real-time Regex & Aho-Corasick scrubbing (`internal/recorder/scrub.go`) |
 | 2. Seek Checkpoints | ✅ Completed | $O(1)$ state snapshots (`internal/recorder/checkpoint.go`) |
@@ -81,8 +75,29 @@ Replay bridges the gap between text logs and video screen shares. Instead of cop
 | 5. Interactive Forking | ✅ Completed | `replay fork <file> [time]` command (`internal/recorder/fork.go`) |
 | 6. Cloud Storage & PG | ✅ Completed | PostgreSQL (`pgvector`) & S3 storage adapters (`internal/server/`) |
 | 7. Streaming Compression | ✅ Completed | Zstd stream compression (`internal/format/compress.go`) |
-| 8. Web Player UI & Copilot | ✅ Completed | macOS frame, hotkeys, AI Copilot drawer (`web/src/components/`) |
+| 8. Web Player & Copilot | ✅ Completed | macOS frame, hotkeys, AI Copilot drawer (`web/src/components/`) |
 
 ---
 
-*This document represents the definitive architecture and current status for Replay.*
+## 4. What We Are Going To Do Next (Phase 4: Web Polish & DevOps)
+
+Below is the planned roadmap for **Phase 4**:
+
+1. **Skip-Idle Playback Mode (`web/src/hooks/usePlayer.tsx`):**
+   - Automatically fast-forward through long pauses or silent inactive periods (>3s) in terminal recordings for faster review.
+
+2. **Embed Player Route (`/embed/[shortcode]`):**
+   - Create a lightweight, iframe-embeddable player route without top navigation bars, optimized for embedding inside GitHub PR descriptions and documentation sites.
+
+3. **Dynamic Terminal Window Resizing (`"r"` events):**
+   - Smoothly update xterm.js grid dimensions dynamically whenever a terminal window resize event occurs mid-recording.
+
+4. **CI/CD Pipeline & Multi-Architecture Binary Releases:**
+   - GitHub Actions workflow (`.github/workflows/release.yml`) cross-compiling CLI binaries for `linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, and `windows/amd64`.
+
+5. **Production Monitoring & Telemetry Integration:**
+   - Structured JSON logging (`log/slog`) across API endpoints, HTTP panic recovery middleware, and Sentry error tracing.
+
+---
+
+*This document represents the updated architecture and status roadmap for Replay.*

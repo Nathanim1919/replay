@@ -157,6 +157,50 @@ func (s *PostgresStore) ListRecordings(userID string) ([]Recording, error) {
 	return recordings, nil
 }
 
+func (s *PostgresStore) ListPublicRecordings(limit int) ([]Recording, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	query := `
+		SELECT id, shortcode, title, tags, user_id, duration, width, height, shell, created_at
+		FROM recordings
+		ORDER BY created_at DESC
+		LIMIT $1
+	`
+	rows, err := s.db.Query(query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var recordings []Recording
+	for rows.Next() {
+		var rec Recording
+		var tagsStr sql.NullString
+		err := rows.Scan(
+			&rec.ID,
+			&rec.Shortcode,
+			&rec.Title,
+			&tagsStr,
+			&rec.UserID,
+			&rec.Duration,
+			&rec.Width,
+			&rec.Height,
+			&rec.Shell,
+			&rec.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if tagsStr.Valid && tagsStr.String != "" {
+			_ = json.Unmarshal([]byte(tagsStr.String), &rec.Tags)
+		}
+		recordings = append(recordings, rec)
+	}
+
+	return recordings, nil
+}
+
 func (s *PostgresStore) GetRecordingByShortcode(shortcode string) (*Recording, error) {
 	query := `
 		SELECT id, shortcode, title, tags, user_id, duration, width, height, shell, created_at

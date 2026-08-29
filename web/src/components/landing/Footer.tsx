@@ -20,6 +20,7 @@ const GithubIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
 
 const footerNavigation = {
   product: [
+    { name: "Explore Gallery", href: "/explore" },
     { name: "Terminal Engine", href: "#products-suite" },
     { name: "Web Player", href: "#products-suite" },
     { name: "Instant Seeking", href: "#products-suite" },

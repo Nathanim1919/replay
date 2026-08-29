@@ -60,6 +60,7 @@ func (s *Server) Router() http.Handler {
     mux := http.NewServeMux()
     mux.Handle("POST /api/upload", auth.AuthMiddleware(http.HandlerFunc(s.handleUpload)))
     mux.Handle("GET /api/recordings", auth.AuthMiddleware(http.HandlerFunc(s.handleListRecording)))
+    mux.HandleFunc("GET /api/recordings/public", s.handlePublicRecordings)
     mux.HandleFunc("GET /api/recordings/{shortcode}", s.handleGetRecording)
     mux.Handle("PUT /api/recordings/{id}", auth.AuthMiddleware(http.HandlerFunc(s.handleUpdateRecording)))
     mux.Handle("DELETE /api/recordings/{id}", auth.AuthMiddleware(http.HandlerFunc(s.handleDeleteRecording)))
@@ -282,6 +283,36 @@ func (s *Server) handleDeleteRecording(w http.ResponseWriter, r *http.Request) {
 
 	_ = s.blobStore.DeleteFile(record.Shortcode)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handlePublicRecordings(w http.ResponseWriter, r *http.Request) {
+	recordings, err := s.sessionStore.ListPublicRecordings(50)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 4)
+
+	for i := range recordings {
+		wg.Add(1)
+		go func(rec *Recording) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			preview, err := s.blobStore.GetFile(rec.Shortcode)
+			if err != nil {
+				return
+			}
+			rec.Preview = preview
+		}(&recordings[i])
+	}
+	wg.Wait()
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(recordings)
 }
 
 

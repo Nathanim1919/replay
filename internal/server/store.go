@@ -28,6 +28,7 @@ type RecordingStore interface {
 	UpdateRecording(recording *Recording) error
 	DeleteRecording(id string, userID string) error
 	ListRecordings(userID string) ([]Recording, error)
+	ListPublicRecordings(limit int) ([]Recording, error)
 	GetRecordingByShortcode(shortcode string) (*Recording, error)
 	GetRecordingById(id string) (*Recording, error)
 }

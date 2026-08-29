@@ -100,6 +100,44 @@ func (s *SQLiteStore) ListRecordings(userId string) ([]Recording, error) {
 	return recordings, nil
 }
 
+func (s *SQLiteStore) ListPublicRecordings(limit int) ([]Recording, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	rows, err := s.db.Query("SELECT id, shortcode, title, tags, user_id, duration, width, height, shell, created_at FROM recordings ORDER BY created_at DESC LIMIT ?", limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var recordings []Recording
+	for rows.Next() {
+		var recording Recording
+		var tagsStr sql.NullString
+		err := rows.Scan(
+			&recording.ID,
+			&recording.Shortcode,
+			&recording.Title,
+			&tagsStr,
+			&recording.UserID,
+			&recording.Duration,
+			&recording.Width,
+			&recording.Height,
+			&recording.Shell,
+			&recording.CreatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+		if tagsStr.Valid && tagsStr.String != "" {
+			_ = json.Unmarshal([]byte(tagsStr.String), &recording.Tags)
+		}
+		recordings = append(recordings, recording)
+	}
+	return recordings, nil
+}
+
 func (s *SQLiteStore) GetRecordingByShortcode(shortcode string) (*Recording, error) {
 	row := s.db.QueryRow("SELECT id, shortcode, title, tags, user_id, duration, width, height, shell, created_at FROM recordings WHERE shortcode = ?", shortcode)
 

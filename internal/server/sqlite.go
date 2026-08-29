@@ -2,6 +2,7 @@ package server
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"github.com/Nathanim1919/replay/internal/domain"
 	_ "modernc.org/sqlite" // Import sqlite driver
@@ -33,6 +34,7 @@ const createRecordingsTable = `
 			id TEXT PRIMARY KEY,
 			shortcode TEXT UNIQUE NOT NULL,
 			title TEXT,
+			tags TEXT,
 			user_id TEXT,
 			duration REAL,
 			width INTEGER,
@@ -52,7 +54,11 @@ const createUsersTable = `
 `
 
 func (s *SQLiteStore) SaveRecording(recording *Recording) error {
-	_, err := s.db.Exec("INSERT INTO recordings (id, shortcode, title, user_id, duration, width, height, shell, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", recording.ID, recording.Shortcode, recording.Title, recording.UserID, recording.Duration, recording.Width, recording.Height, recording.Shell, recording.CreatedAt)
+	tagsBytes, _ := json.Marshal(recording.Tags)
+	_, err := s.db.Exec(
+		"INSERT INTO recordings (id, shortcode, title, tags, user_id, duration, width, height, shell, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		recording.ID, recording.Shortcode, recording.Title, string(tagsBytes), recording.UserID, recording.Duration, recording.Width, recording.Height, recording.Shell, recording.CreatedAt,
+	)
 	if err != nil {
 		return err
 	}
@@ -60,7 +66,7 @@ func (s *SQLiteStore) SaveRecording(recording *Recording) error {
 }
 
 func (s *SQLiteStore) ListRecordings(userId string) ([]Recording, error) {
-	rows, err := s.db.Query("SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at FROM recordings WHERE user_id = ?", userId)
+	rows, err := s.db.Query("SELECT id, shortcode, title, tags, user_id, duration, width, height, shell, created_at FROM recordings WHERE user_id = ?", userId)
 	if err != nil {
 		return nil, err
 	}
@@ -69,10 +75,25 @@ func (s *SQLiteStore) ListRecordings(userId string) ([]Recording, error) {
 	var recordings []Recording
 	for rows.Next() {
 		var recording Recording
-		err := rows.Scan(&recording.ID, &recording.Shortcode, &recording.Title, &recording.UserID, &recording.Duration, &recording.Width, &recording.Height, &recording.Shell, &recording.CreatedAt)
+		var tagsStr sql.NullString
+		err := rows.Scan(
+			&recording.ID,
+			&recording.Shortcode,
+			&recording.Title,
+			&tagsStr,
+			&recording.UserID,
+			&recording.Duration,
+			&recording.Width,
+			&recording.Height,
+			&recording.Shell,
+			&recording.CreatedAt,
+		)
 
 		if err != nil {
 			return nil, err
+		}
+		if tagsStr.Valid && tagsStr.String != "" {
+			_ = json.Unmarshal([]byte(tagsStr.String), &recording.Tags)
 		}
 		recordings = append(recordings, recording)
 	}
@@ -80,22 +101,38 @@ func (s *SQLiteStore) ListRecordings(userId string) ([]Recording, error) {
 }
 
 func (s *SQLiteStore) GetRecordingByShortcode(shortcode string) (*Recording, error) {
-	row := s.db.QueryRow("SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at FROM recordings WHERE shortcode = ?", shortcode)
+	row := s.db.QueryRow("SELECT id, shortcode, title, tags, user_id, duration, width, height, shell, created_at FROM recordings WHERE shortcode = ?", shortcode)
 
 	var recording Recording
-	err := row.Scan(&recording.ID, &recording.Shortcode, &recording.Title, &recording.UserID, &recording.Duration, &recording.Width, &recording.Height, &recording.Shell, &recording.CreatedAt)
+	var tagsStr sql.NullString
+	err := row.Scan(
+		&recording.ID,
+		&recording.Shortcode,
+		&recording.Title,
+		&tagsStr,
+		&recording.UserID,
+		&recording.Duration,
+		&recording.Width,
+		&recording.Height,
+		&recording.Shell,
+		&recording.CreatedAt,
+	)
 	if err == sql.ErrNoRows {
 		return nil, nil // No recording found
 	}
 	if err != nil {
 		return nil, err // real error
 	}
+	if tagsStr.Valid && tagsStr.String != "" {
+		_ = json.Unmarshal([]byte(tagsStr.String), &recording.Tags)
+	}
 	return &recording, nil // Success
 }
 
 
 func (s *SQLiteStore) UpdateRecording(recording *Recording) error {
-	_, err := s.db.Exec("UPDATE recordings SET title = ? WHERE id = ?", recording.Title, recording.ID)
+	tagsBytes, _ := json.Marshal(recording.Tags)
+	_, err := s.db.Exec("UPDATE recordings SET title = ?, tags = ? WHERE id = ?", recording.Title, string(tagsBytes), recording.ID)
 	if err != nil {
 		return err
 	}
@@ -109,15 +146,30 @@ func (s *SQLiteStore) DeleteRecording(id string, userID string) error {
 
 
 func (s *SQLiteStore) GetRecordingById(id string) (*Recording, error) {
-	row := s.db.QueryRow("SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at FROM recordings WHERE id = ?", id)
+	row := s.db.QueryRow("SELECT id, shortcode, title, tags, user_id, duration, width, height, shell, created_at FROM recordings WHERE id = ?", id)
 
 	var recording Recording
-	err := row.Scan(&recording.ID, &recording.Shortcode, &recording.Title, &recording.UserID, &recording.Duration, &recording.Width, &recording.Height, &recording.Shell, &recording.CreatedAt)
+	var tagsStr sql.NullString
+	err := row.Scan(
+		&recording.ID,
+		&recording.Shortcode,
+		&recording.Title,
+		&tagsStr,
+		&recording.UserID,
+		&recording.Duration,
+		&recording.Width,
+		&recording.Height,
+		&recording.Shell,
+		&recording.CreatedAt,
+	)
 	if err == sql.ErrNoRows {
 		return nil, nil // No recording found
 	}
 	if err != nil {
 		return nil, err // real error
+	}
+	if tagsStr.Valid && tagsStr.String != "" {
+		_ = json.Unmarshal([]byte(tagsStr.String), &recording.Tags)
 	}
 	return &recording, nil // Success
 }

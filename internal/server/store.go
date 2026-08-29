@@ -14,6 +14,7 @@ type Recording struct {
 	Shortcode string    `json:"shortcode"`
 	UserID    string    `json:"user_id"`
 	Title     string    `json:"title"`
+	Tags      []string  `json:"tags"`
 	Preview   []byte    `json:"preview,omitempty"`
 	Duration  float64   `json:"duration"`
 	Width     int       `json:"width"`

@@ -2,6 +2,7 @@ package server
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -43,6 +44,7 @@ func (s *PostgresStore) initSchema() error {
 			id VARCHAR(64) PRIMARY KEY,
 			shortcode VARCHAR(32) UNIQUE NOT NULL,
 			title TEXT,
+			tags TEXT,
 			user_id VARCHAR(64),
 			duration DOUBLE PRECISION DEFAULT 0.0,
 			width INT DEFAULT 80,
@@ -77,18 +79,20 @@ func (s *PostgresStore) initSchema() error {
 
 func (s *PostgresStore) SaveRecording(recording *Recording) error {
 	query := `
-		INSERT INTO recordings (id, shortcode, title, user_id, duration, width, height, shell, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO recordings (id, shortcode, title, tags, user_id, duration, width, height, shell, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 	createdAt := recording.CreatedAt
 	if createdAt.IsZero() {
 		createdAt = time.Now()
 	}
 
+	tagsBytes, _ := json.Marshal(recording.Tags)
 	_, err := s.db.Exec(query,
 		recording.ID,
 		recording.Shortcode,
 		recording.Title,
+		string(tagsBytes),
 		recording.UserID,
 		recording.Duration,
 		recording.Width,
@@ -100,8 +104,9 @@ func (s *PostgresStore) SaveRecording(recording *Recording) error {
 }
 
 func (s *PostgresStore) UpdateRecording(recording *Recording) error {
-	query := `UPDATE recordings SET title = $1 WHERE id = $2`
-	_, err := s.db.Exec(query, recording.Title, recording.ID)
+	tagsBytes, _ := json.Marshal(recording.Tags)
+	query := `UPDATE recordings SET title = $1, tags = $2 WHERE id = $3`
+	_, err := s.db.Exec(query, recording.Title, string(tagsBytes), recording.ID)
 	return err
 }
 
@@ -113,7 +118,7 @@ func (s *PostgresStore) DeleteRecording(id string, userID string) error {
 
 func (s *PostgresStore) ListRecordings(userID string) ([]Recording, error) {
 	query := `
-		SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at
+		SELECT id, shortcode, title, tags, user_id, duration, width, height, shell, created_at
 		FROM recordings
 		WHERE user_id = $1
 		ORDER BY created_at DESC
@@ -127,10 +132,12 @@ func (s *PostgresStore) ListRecordings(userID string) ([]Recording, error) {
 	var recordings []Recording
 	for rows.Next() {
 		var rec Recording
+		var tagsStr sql.NullString
 		err := rows.Scan(
 			&rec.ID,
 			&rec.Shortcode,
 			&rec.Title,
+			&tagsStr,
 			&rec.UserID,
 			&rec.Duration,
 			&rec.Width,
@@ -141,6 +148,9 @@ func (s *PostgresStore) ListRecordings(userID string) ([]Recording, error) {
 		if err != nil {
 			return nil, err
 		}
+		if tagsStr.Valid && tagsStr.String != "" {
+			_ = json.Unmarshal([]byte(tagsStr.String), &rec.Tags)
+		}
 		recordings = append(recordings, rec)
 	}
 
@@ -149,17 +159,19 @@ func (s *PostgresStore) ListRecordings(userID string) ([]Recording, error) {
 
 func (s *PostgresStore) GetRecordingByShortcode(shortcode string) (*Recording, error) {
 	query := `
-		SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at
+		SELECT id, shortcode, title, tags, user_id, duration, width, height, shell, created_at
 		FROM recordings
 		WHERE shortcode = $1
 	`
 	row := s.db.QueryRow(query, shortcode)
 
 	var rec Recording
+	var tagsStr sql.NullString
 	err := row.Scan(
 		&rec.ID,
 		&rec.Shortcode,
 		&rec.Title,
+		&tagsStr,
 		&rec.UserID,
 		&rec.Duration,
 		&rec.Width,
@@ -172,23 +184,28 @@ func (s *PostgresStore) GetRecordingByShortcode(shortcode string) (*Recording, e
 	}
 	if err != nil {
 		return nil, err
+	}
+	if tagsStr.Valid && tagsStr.String != "" {
+		_ = json.Unmarshal([]byte(tagsStr.String), &rec.Tags)
 	}
 	return &rec, nil
 }
 
 func (s *PostgresStore) GetRecordingById(id string) (*Recording, error) {
 	query := `
-		SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at
+		SELECT id, shortcode, title, tags, user_id, duration, width, height, shell, created_at
 		FROM recordings
 		WHERE id = $1
 	`
 	row := s.db.QueryRow(query, id)
 
 	var rec Recording
+	var tagsStr sql.NullString
 	err := row.Scan(
 		&rec.ID,
 		&rec.Shortcode,
 		&rec.Title,
+		&tagsStr,
 		&rec.UserID,
 		&rec.Duration,
 		&rec.Width,
@@ -201,6 +218,9 @@ func (s *PostgresStore) GetRecordingById(id string) (*Recording, error) {
 	}
 	if err != nil {
 		return nil, err
+	}
+	if tagsStr.Valid && tagsStr.String != "" {
+		_ = json.Unmarshal([]byte(tagsStr.String), &rec.Tags)
 	}
 	return &rec, nil
 }

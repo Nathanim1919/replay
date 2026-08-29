@@ -16,6 +16,8 @@ import {
   X,
   Sparkles,
   Trash2,
+  Tag,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -26,6 +28,7 @@ interface Session {
   id: string;
   shortcode: string;
   title: string;
+  tags?: string[];
   preview?: string;
   duration: number;
   width: number;
@@ -55,6 +58,9 @@ export default function RecordingList() {
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [addingTagId, setAddingTagId] = useState<string | null>(null);
+  const [tagInputValue, setTagInputValue] = useState("");
   const [embedModalSession, setEmbedModalSession] = useState<Session | null>(null);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -133,16 +139,85 @@ export default function RecordingList() {
     }
   };
 
+  const handleAddTag = async (id: string, tagToAdd: string) => {
+    const cleanTag = tagToAdd.trim().toLowerCase().replace(/^#/, "");
+    if (!cleanTag) return;
+
+    const target = sessions.find((s) => s.id === id);
+    if (!target) return;
+
+    const existingTags = target.tags || [];
+    if (existingTags.includes(cleanTag)) {
+      setAddingTagId(null);
+      setTagInputValue("");
+      return;
+    }
+
+    const updatedTags = [...existingTags, cleanTag];
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, tags: updatedTags } : s))
+    );
+    setAddingTagId(null);
+    setTagInputValue("");
+
+    try {
+      await fetch(`/api/recordings/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tags: updatedTags }),
+      });
+      toast.success(`Tag #${cleanTag} added`);
+    } catch (err) {
+      console.error("Failed to add tag:", err);
+      toast.error("Failed to save tag");
+      fetchSessions();
+    }
+  };
+
+  const handleRemoveTag = async (id: string, tagToRemove: string) => {
+    const target = sessions.find((s) => s.id === id);
+    if (!target) return;
+
+    const updatedTags = (target.tags || []).filter((t) => t !== tagToRemove);
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, tags: updatedTags } : s))
+    );
+
+    try {
+      await fetch(`/api/recordings/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tags: updatedTags }),
+      });
+      toast.success(`Tag #${tagToRemove} removed`);
+    } catch (err) {
+      console.error("Failed to remove tag:", err);
+      toast.error("Failed to remove tag");
+      fetchSessions();
+    }
+  };
+
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    sessions.forEach((s) => s.tags?.forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [sessions]);
+
   const filteredSessions = useMemo(() => {
-    if (!searchQuery.trim()) return sessions;
-    const query = searchQuery.toLowerCase();
-    return sessions.filter(
-      (s) =>
+    return sessions.filter((s) => {
+      const query = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !query ||
         s.title.toLowerCase().includes(query) ||
         (s.shell && s.shell.toLowerCase().includes(query)) ||
-        s.shortcode.toLowerCase().includes(query)
-    );
-  }, [sessions, searchQuery]);
+        s.shortcode.toLowerCase().includes(query) ||
+        (s.tags && s.tags.some((t) => t.toLowerCase().includes(query)));
+
+      const matchesTag = !selectedTag || (s.tags && s.tags.includes(selectedTag));
+
+      return matchesSearch && matchesTag;
+    });
+  }, [sessions, searchQuery, selectedTag]);
 
   const totalDuration = useMemo(() => {
     return sessions.reduce((acc, curr) => acc + (curr.duration || 0), 0);
@@ -224,6 +299,43 @@ export default function RecordingList() {
                   </strong>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAG FILTER BAR */}
+          {!loading && allTags.length > 0 && (
+            <div className="pt-4 border-t border-gray-200 flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-mono font-bold text-gray-400 flex items-center gap-1 mr-1">
+                <Tag className="w-3.5 h-3.5" />
+                Filter:
+              </span>
+              <button
+                onClick={() => setSelectedTag(null)}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
+                  selectedTag === null
+                    ? "bg-black text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300"
+                }`}
+              >
+                All ({sessions.length})
+              </button>
+              {allTags.map((tag) => {
+                const count = sessions.filter((s) => s.tags?.includes(tag)).length;
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                      selectedTag === tag
+                        ? "bg-black text-white text-semibold shadow-xs"
+                        : "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300"
+                    }`}
+                  >
+                    <span>#{tag}</span>
+                    <span className="opacity-60 text-[10px]">({count})</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -342,6 +454,73 @@ export default function RecordingList() {
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
+                    )}
+                  </div>
+
+                  {/* TAGS LIST & ADD TAG BUTTON */}
+                  <div className="flex items-center gap-1.5 flex-wrap text-[11px] pt-1">
+                    {session.tags && session.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 border border-gray-300 font-mono text-gray-700 font-semibold text-[10px]"
+                      >
+                        #{tag}
+                        <button
+                          onClick={() => handleRemoveTag(session.id, tag)}
+                          className="hover:text-red-600 cursor-pointer ml-0.5"
+                          title="Remove Tag"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+
+                    {addingTagId === session.id ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="text"
+                          placeholder="tag name..."
+                          value={tagInputValue}
+                          onChange={(e) => setTagInputValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleAddTag(session.id, tagInputValue);
+                            } else if (e.key === "Escape") {
+                              setAddingTagId(null);
+                              setTagInputValue("");
+                            }
+                          }}
+                          className="bg-gray-100 border border-gray-300 rounded px-2 py-0.5 text-xs text-black focus:outline-none focus:ring-1 focus:ring-black w-24"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleAddTag(session.id, tagInputValue)}
+                          className="p-1 bg-black text-white rounded hover:bg-gray-800 cursor-pointer"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setAddingTagId(null);
+                            setTagInputValue("");
+                          }}
+                          className="p-1 text-gray-500 hover:text-black cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setAddingTagId(session.id);
+                          setTagInputValue("");
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-50 hover:bg-gray-100 border border-dashed border-gray-300 text-gray-500 hover:text-black transition cursor-pointer text-[10px] font-bold"
+                        title="Add Custom Tag"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Tag</span>
+                      </button>
                     )}
                   </div>
 

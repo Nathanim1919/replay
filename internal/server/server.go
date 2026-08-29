@@ -133,10 +133,13 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		title = "Untitled"
 	}
 
+	autoTags := ExtractAutoTags(header, uncompressedBody)
+
 	err = s.sessionStore.SaveRecording(&Recording{
 		ID:        uuid.New().String(),
 		Shortcode: shortcode,
 		Title:     title,
+		Tags:      autoTags,
 		UserID:    claims.UserID, // Use the authenticated user ID
 		Duration:  header.Duration,
 		Width:     header.Width,
@@ -149,7 +152,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("Saved recording: %s (shortcode: %s) UserID: %s\n", title, shortcode, claims.UserID)
+	fmt.Printf("Saved recording: %s (shortcode: %s) UserID: %s Tags: %v\n", title, shortcode, claims.UserID, autoTags)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{
@@ -218,14 +221,15 @@ func (s *Server) handleUpdateRecording(w http.ResponseWriter, r *http.Request) {
 	// get the recording ID from the URL path
 	id := r.PathValue("id")
 	record, err := s.sessionStore.GetRecordingById(id)
-	if err != nil {
+	if err != nil || record == nil {
 		http.Error(w, "Recording not found", http.StatusNotFound)
 		return
 	}
 
-	// parse the request body for updated title and description
+	// parse the request body for updated title and tags
 	var req struct {
-		Titile string `json:"title"`
+		Title string   `json:"title"`
+		Tags  []string `json:"tags"`
 	}
 
 	err = json.NewDecoder(r.Body).Decode(&req)
@@ -234,8 +238,12 @@ func (s *Server) handleUpdateRecording(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// update the recording's title and description
-	record.Title = req.Titile
+	if req.Title != "" {
+		record.Title = req.Title
+	}
+	if req.Tags != nil {
+		record.Tags = req.Tags
+	}
 
 	// save the updated recording back to the store
 	err = s.sessionStore.UpdateRecording(record)

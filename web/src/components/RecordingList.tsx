@@ -18,8 +18,10 @@ import {
   Trash2,
   Tag,
   Plus,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
+import { exportToSvg } from "@/lib/export-utils";
 import Link from "next/link";
 import TerminalImage from "../../public/terminal.png";
 import Image from "next/image";
@@ -532,6 +534,18 @@ export default function RecordingList() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          exportToSvg(session.title || "recording", ["$ replay record", `Shell: ${session.shell || "zsh"}`, `Duration: ${formatDuration(session.duration)}`]);
+                          toast.success("Exported terminal SVG preview!");
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-black font-extrabold text-[11px] border border-gray-300 transition cursor-pointer"
+                        title="Export SVG Preview"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>SVG</span>
+                      </button>
+
                       <button
                         onClick={() => setEmbedModalSession(session)}
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-black font-extrabold text-[11px] border border-gray-300 transition cursor-pointer"

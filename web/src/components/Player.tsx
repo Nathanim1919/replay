@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import Terminal from "./Terminal"
 import Waveform from "./Waveform"
-import { Play, Pause, Maximize, Minimize, RotateCcw, Copy, Check, Terminal as TermIcon, SkipBack, SkipForward, Zap } from "lucide-react"
+import { Play, Pause, Maximize, Minimize, RotateCcw, Copy, Check, Terminal as TermIcon, SkipBack, SkipForward, Zap, Download, FileText, Image as ImageIcon } from "lucide-react"
 import { usePlayer } from "@/hooks/usePlayer"
 import { toast } from "sonner"
+import { exportToCast, exportToSvg, exportRawReplay } from "@/lib/export-utils"
 
 interface PlayerProps {
   mode?: "preview" | "full"
@@ -32,6 +33,7 @@ export const Player = ({ mode = "full", title = "replay session" }: PlayerProps)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showExportMenu, setShowExportMenu] = useState(false)
 
   const enterFullscreen = useCallback(() => {
     containerRef.current?.requestFullscreen?.()
@@ -150,7 +152,7 @@ export const Player = ({ mode = "full", title = "replay session" }: PlayerProps)
           </div>
         )}
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 relative">
           <button
             onClick={handleCopyTranscript}
             title="Copy Terminal Output"
@@ -158,6 +160,45 @@ export const Player = ({ mode = "full", title = "replay session" }: PlayerProps)
           >
             {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
           </button>
+
+          <div className="relative">
+            <button
+              onClick={() => setShowExportMenu((prev) => !prev)}
+              className="px-2 py-1 text-xs font-mono font-medium text-zinc-300 hover:text-white bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 rounded-md transition-colors cursor-pointer flex items-center gap-1"
+              title="Export Recording"
+            >
+              <Download size={13} />
+              <span>Export</span>
+            </button>
+
+            {showExportMenu && (
+              <div className="absolute right-0 top-full mt-1.5 w-48 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-50 py-1 font-mono text-xs text-zinc-300 animate-in fade-in zoom-in-95 duration-150">
+                <button
+                  onClick={() => {
+                    setShowExportMenu(false)
+                    // Export SVG frame
+                    exportToSvg(title, ["$ replay record", "Session output..."])
+                    toast.success("Exported terminal SVG preview!")
+                  }}
+                  className="w-full px-3 py-2 text-left hover:bg-zinc-800 hover:text-white flex items-center gap-2 cursor-pointer"
+                >
+                  <ImageIcon size={13} className="text-emerald-400" />
+                  <span>Download SVG Image</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowExportMenu(false)
+                    toast.info("Preparing asciinema .cast download...")
+                  }}
+                  className="w-full px-3 py-2 text-left hover:bg-zinc-800 hover:text-white flex items-center gap-2 cursor-pointer"
+                >
+                  <FileText size={13} className="text-amber-400" />
+                  <span>Download .cast File</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

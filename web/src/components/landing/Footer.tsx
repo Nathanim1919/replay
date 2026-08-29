@@ -49,78 +49,79 @@ export default function Footer() {
     try {
       await navigator.clipboard.writeText(installCmd);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 1500);
     } catch {
       // fallback
     }
   };
 
   return (
-    <footer className="relative bg-[#faf9f6] border-t border-stone-200 text-stone-800 pt-16 pb-12 transition-colors duration-300">
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-8 space-y-14">
+    <footer className="bg-gray-100 border-t border-gray-300 relative py-16 text-black">
+      <div className="w-[95%] md:w-[80%] mx-auto space-y-12">
         
-        {/* TOP BRAND & CTA SECTION */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pb-12 border-b border-stone-200">
-          {/* BRAND COLUMN */}
-          <div className="lg:col-span-5 space-y-5">
+        {/* TOP BRAND & CLI RECORD CARD */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 pb-12 border-b border-gray-300">
+          
+          {/* BRAND INFO */}
+          <div className="lg:col-span-6 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#f0ede6] border border-stone-300 text-[#cc785c]">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-black text-white shadow-sm">
                 <Terminal className="w-5 h-5" />
               </div>
-              <span className="text-xl font-semibold tracking-tight text-[#191817] font-sans">
+              <span className="text-2xl font-extrabold tracking-tight text-black font-sans">
                 Replay
               </span>
-              <span className="px-2 py-0.5 text-[10px] font-mono font-medium uppercase tracking-wider text-[#cc785c] bg-[#cc785c]/10 border border-[#cc785c]/25 rounded-full">
+              <span className="px-2.5 py-0.5 text-[11px] font-mono font-bold uppercase tracking-wider text-black bg-gray-200 border border-gray-300 rounded-full">
                 v1.0.0
               </span>
             </div>
 
-            <p className="text-sm text-stone-600 leading-relaxed max-w-md">
-              Capture, replay, and share pixel-perfect CLI terminal sessions directly in the browser. Built with high-performance Go binaries and instant canvas playback.
+            <p className="text-sm sm:text-base text-gray-700 leading-relaxed max-w-md">
+              Capture, replay, and share pixel-perfect CLI terminal sessions directly in the browser. High-performance Go binaries with zero setup.
             </p>
 
             {/* LIVE SYSTEM STATUS BADGE */}
-            <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white border border-stone-200 shadow-xs text-xs text-stone-700">
-              <span className="relative flex h-2 w-2">
+            <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white border border-gray-300 text-xs font-semibold text-gray-800 shadow-2xs">
+              <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
-              <span className="font-mono text-[11px] font-medium tracking-wide text-stone-700">
+              <span className="font-mono text-xs font-bold tracking-tight text-gray-900">
                 All Systems Operational
               </span>
             </div>
           </div>
 
-          {/* QUICK CLI COMMAND COPY CARD */}
-          <div className="lg:col-span-7 flex flex-col justify-center items-start lg:items-end">
-            <div className="w-full max-w-md p-5 rounded-2xl bg-white border border-stone-200/90 shadow-sm space-y-3">
+          {/* QUICK CLI COMMAND COPY BOX */}
+          <div className="lg:col-span-6 flex flex-col justify-center items-start lg:items-end">
+            <div className="w-full max-w-md p-6 rounded-2xl bg-white border border-gray-300 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-mono text-stone-600">
-                  <Sparkles className="w-3.5 h-3.5 text-[#cc785c]" />
-                  <span>Start recording terminal session</span>
+                <div className="flex items-center gap-2 text-xs font-mono text-gray-600 font-bold">
+                  <Sparkles className="w-4 h-4 text-black" />
+                  <span>Start recording session</span>
                 </div>
-                <span className="text-[11px] text-stone-400 font-mono">Bash / Zsh</span>
+                <span className="text-xs text-gray-500 font-mono">Bash / Zsh</span>
               </div>
 
-              <div className="flex items-center justify-between gap-3 bg-[#f5f4ef] border border-stone-200 rounded-xl px-3.5 py-2.5 font-mono text-xs">
-                <div className="flex items-center gap-2 truncate text-[#191817]">
-                  <span className="text-[#cc785c] font-semibold">$</span>
-                  <span className="select-all font-medium">replay record</span>
+              <div className="flex items-center justify-between gap-3 bg-gray-100 border border-gray-300 rounded-xl px-4 py-3 font-mono text-xs">
+                <div className="flex items-center gap-2 truncate text-black font-bold">
+                  <span className="text-gray-400">$</span>
+                  <span className="select-all">replay record</span>
                 </div>
 
                 <button
                   onClick={handleCopyInstall}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-stone-700 hover:text-stone-900 bg-white hover:bg-stone-50 border border-stone-300 rounded-lg transition-all cursor-pointer shrink-0 active:scale-95 shadow-2xs"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-black hover:text-white bg-white hover:bg-black border border-gray-300 hover:border-black rounded-lg transition cursor-pointer shrink-0"
                   title="Copy command to clipboard"
                 >
                   {copied ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-emerald-700 font-semibold">Copied</span>
+                      <span className="text-emerald-600">Copied</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3.5 h-3.5 text-stone-500" />
+                      <Copy className="w-3.5 h-3.5" />
                       <span>Copy</span>
                     </>
                   )}
@@ -131,20 +132,21 @@ export default function Footer() {
         </div>
 
         {/* NAVIGATION LINKS GRID */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-4 border-b border-stone-200">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-2 border-b border-gray-300">
+          
           {/* PRODUCT */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#191817] mb-4 font-mono">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-black mb-4 font-sans">
               Product Suite
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-3">
               {footerNavigation.product.map((item) => (
                 <li key={item.name}>
                   <a
                     href={item.href}
-                    className="text-sm text-stone-600 hover:text-[#cc785c] transition-colors duration-150 inline-flex items-center gap-1 group"
+                    className="text-sm font-medium text-gray-600 hover:text-black transition inline-flex items-center gap-1 group"
                   >
-                    <span className="group-hover:translate-x-0.5 transition-transform duration-150">
+                    <span className="group-hover:translate-x-0.5 transition-transform">
                       {item.name}
                     </span>
                   </a>
@@ -155,23 +157,23 @@ export default function Footer() {
 
           {/* DEVELOPERS */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#191817] mb-4 font-mono">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-black mb-4 font-sans">
               Developers
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-3">
               {footerNavigation.developers.map((item) => (
                 <li key={item.name}>
                   <a
                     href={item.href}
                     target={item.external ? "_blank" : undefined}
                     rel={item.external ? "noopener noreferrer" : undefined}
-                    className="text-sm text-stone-600 hover:text-[#cc785c] transition-colors duration-150 inline-flex items-center gap-1 group"
+                    className="text-sm font-medium text-gray-600 hover:text-black transition inline-flex items-center gap-1 group"
                   >
-                    <span className="group-hover:translate-x-0.5 transition-transform duration-150">
+                    <span className="group-hover:translate-x-0.5 transition-transform">
                       {item.name}
                     </span>
                     {item.external && (
-                      <ArrowUpRight className="w-3 h-3 text-stone-400 group-hover:text-[#cc785c] transition-colors" />
+                      <ArrowUpRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-black transition" />
                     )}
                   </a>
                 </li>
@@ -181,23 +183,23 @@ export default function Footer() {
 
           {/* COMMUNITY */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#191817] mb-4 font-mono">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-black mb-4 font-sans">
               Community
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-3">
               {footerNavigation.community.map((item) => (
                 <li key={item.name}>
                   <a
                     href={item.href}
                     target={item.external ? "_blank" : undefined}
                     rel={item.external ? "noopener noreferrer" : undefined}
-                    className="text-sm text-stone-600 hover:text-[#cc785c] transition-colors duration-150 inline-flex items-center gap-1 group"
+                    className="text-sm font-medium text-gray-600 hover:text-black transition inline-flex items-center gap-1 group"
                   >
-                    <span className="group-hover:translate-x-0.5 transition-transform duration-150">
+                    <span className="group-hover:translate-x-0.5 transition-transform">
                       {item.name}
                     </span>
                     {item.external && (
-                      <ArrowUpRight className="w-3 h-3 text-stone-400 group-hover:text-[#cc785c] transition-colors" />
+                      <ArrowUpRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-black transition" />
                     )}
                   </a>
                 </li>
@@ -205,41 +207,42 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* LEGAL & OPEN SOURCE */}
+          {/* OPEN SOURCE */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#191817] mb-4 font-mono">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-black mb-4 font-sans">
               Open Source
             </h3>
-            <div className="space-y-3 text-sm text-stone-600">
-              <div className="flex items-center gap-2 text-stone-800 font-medium">
+            <div className="space-y-3 text-sm text-gray-700">
+              <div className="flex items-center gap-2 font-bold text-black">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>100% Free & Open Source</span>
               </div>
-              <p className="text-xs leading-relaxed text-stone-500">
-                Replay is distributed under the permissive MIT license. Feel free to embed, adapt, or contribute to the core recorder engine.
+              <p className="text-xs leading-relaxed text-gray-600">
+                Replay is distributed under the permissive MIT license. Feel free to embed, adapt, or contribute.
               </p>
               <a
                 href="https://github.com/Nathanim1919/replay"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-xs font-medium text-stone-800 hover:bg-stone-50 transition-colors shadow-2xs mt-1"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-xs font-extrabold text-black hover:bg-black hover:text-white transition shadow-2xs mt-1"
               >
-                <GithubIcon className="w-3.5 h-3.5 text-stone-700" />
+                <GithubIcon className="w-3.5 h-3.5" />
                 <span>Star on GitHub</span>
               </a>
             </div>
           </div>
+
         </div>
 
         {/* BOTTOM BAR */}
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-500">
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-gray-600">
           <p>
             © {new Date().getFullYear()} Replay Engine. Released under the{" "}
             <a
               href="https://github.com/Nathanim1919/replay/blob/main/LICENSE"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-stone-700 hover:underline underline-offset-2"
+              className="text-black hover:underline font-bold"
             >
               MIT License
             </a>
@@ -251,12 +254,12 @@ export default function Footer() {
               href="https://nathanim.dev"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-stone-600 hover:text-stone-900 transition-colors"
+              className="inline-flex items-center gap-1.5 text-gray-700 hover:text-black transition"
             >
               <span>Crafted with</span>
               <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
               <span>
-                by <strong className="font-semibold text-stone-800">Nathanim</strong>
+                by <strong className="font-extrabold text-black">Nathanim</strong>
               </span>
             </a>
 
@@ -264,13 +267,14 @@ export default function Footer() {
               href="https://github.com/Nathanim1919/replay"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 rounded-md hover:bg-stone-200/60 text-stone-600 hover:text-stone-900 transition-colors"
+              className="p-1.5 rounded-md hover:bg-gray-200 text-gray-700 hover:text-black transition"
               aria-label="GitHub Repository"
             >
               <GithubIcon className="w-4 h-4" />
             </a>
           </div>
         </div>
+
       </div>
     </footer>
   );

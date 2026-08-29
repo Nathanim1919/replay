@@ -37,17 +37,24 @@ func SaveSession(token *domain.TokenSession) error {
 
 
 func LoadSession() (*domain.TokenSession, error) {
-    home, _ := os.UserHomeDir()
-    filePath := filepath.Join(home, configDir, sessionFile)
+	home, _ := os.UserHomeDir()
+	filePath := filepath.Join(home, configDir, sessionFile)
 
-    data, err := os.ReadFile(filePath)
-    if err != nil {
-        return nil, err // No session found
-    }
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err // No session found
+	}
 
-    var session domain.TokenSession
-    json.Unmarshal(data, &session)
-    return &session, nil
+	var session domain.TokenSession
+	if err := json.Unmarshal(data, &session); err != nil {
+		return nil, err
+	}
+
+	if session.AccessToken == "" {
+		return nil, os.ErrNotExist
+	}
+
+	return &session, nil
 }
 
 // Example usage inside a generic command:

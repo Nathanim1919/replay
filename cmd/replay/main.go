@@ -118,8 +118,8 @@ func main() {
 
 	case "record", "upload":
 		session, err := lib.LoadSession()
-		if err != nil {
-			fmt.Println("🔒 Authentication required for cloud features.")
+		if err != nil || session == nil || session.AccessToken == "" {
+			fmt.Println("🔒 Authentication required before recording or uploading sessions.")
 			fmt.Println("   Run 'replay login' to connect your terminal account.")
 			os.Exit(1)
 		}

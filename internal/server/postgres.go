@@ -105,6 +105,12 @@ func (s *PostgresStore) UpdateRecording(recording *Recording) error {
 	return err
 }
 
+func (s *PostgresStore) DeleteRecording(id string, userID string) error {
+	query := `DELETE FROM recordings WHERE id = $1 AND user_id = $2`
+	_, err := s.db.Exec(query, id, userID)
+	return err
+}
+
 func (s *PostgresStore) ListRecordings(userID string) ([]Recording, error) {
 	query := `
 		SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at

@@ -29,6 +29,15 @@ func (s *LocalBlobStore) GetFile(shortcode string) ([]byte, error) {
 	return os.ReadFile(path)
 }
 
+func (s *LocalBlobStore) DeleteFile(shortcode string) error {
+	path := filepath.Join(s.dir, shortcode+".replay")
+	err := os.Remove(path)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
 func (s *LocalBlobStore) PreviewReplay(shortcode string, maxEvents int) (string, error) {
 	path := filepath.Join(s.dir, shortcode+".replay")
 	file, err := os.Open(path)

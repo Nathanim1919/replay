@@ -15,6 +15,7 @@ import {
   Copy,
   X,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -107,6 +108,28 @@ export default function RecordingList() {
       toast.success("Session URL copied to clipboard!");
     } catch {
       toast.error("Failed to copy URL");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this recording?")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/recordings/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete session");
+      }
+
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+      toast.success("Recording deleted successfully");
+    } catch (err) {
+      console.error("Delete recording error:", err);
+      toast.error("Failed to delete recording");
     }
   };
 
@@ -303,13 +326,22 @@ export default function RecordingList() {
                     )}
 
                     {isEditing !== session.id && (
-                      <button
-                        onClick={() => setIsEditing(session.id)}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-black hover:bg-gray-100 transition shrink-0 cursor-pointer"
-                        title="Rename Session"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => setIsEditing(session.id)}
+                          className="p-1.5 rounded-lg text-gray-500 hover:text-black hover:bg-gray-100 transition cursor-pointer"
+                          title="Rename Session"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(session.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                          title="Delete Session"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     )}
                   </div>
 

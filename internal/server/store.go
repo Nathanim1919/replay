@@ -25,6 +25,7 @@ type Recording struct {
 type RecordingStore interface {
 	SaveRecording(recording *Recording) error
 	UpdateRecording(recording *Recording) error
+	DeleteRecording(id string, userID string) error
 	ListRecordings(userID string) ([]Recording, error)
 	GetRecordingByShortcode(shortcode string) (*Recording, error)
 	GetRecordingById(id string) (*Recording, error)
@@ -33,5 +34,6 @@ type RecordingStore interface {
 type BlobStore interface {
 	SaveFile(shortcode string, data []byte) error
 	GetFile(shortcode string) ([]byte, error)
+	DeleteFile(shortcode string) error
 	PreviewReplay(shortcode string, maxEvents int) (string, error)
 }

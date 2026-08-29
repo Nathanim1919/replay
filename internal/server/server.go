@@ -61,7 +61,8 @@ func (s *Server) Router() http.Handler {
     mux.Handle("POST /api/upload", auth.AuthMiddleware(http.HandlerFunc(s.handleUpload)))
     mux.Handle("GET /api/recordings", auth.AuthMiddleware(http.HandlerFunc(s.handleListRecording)))
     mux.HandleFunc("GET /api/recordings/{shortcode}", s.handleGetRecording)
-	mux.Handle("PUT /api/recordings/{id}", auth.AuthMiddleware(http.HandlerFunc(s.handleUpdateRecording)))
+    mux.Handle("PUT /api/recordings/{id}", auth.AuthMiddleware(http.HandlerFunc(s.handleUpdateRecording)))
+    mux.Handle("DELETE /api/recordings/{id}", auth.AuthMiddleware(http.HandlerFunc(s.handleDeleteRecording)))
     
     // Auth endpoints
     mux.HandleFunc("POST /api/auth/device/init", s.authHandler.DeviceInit)
@@ -245,6 +246,34 @@ func (s *Server) handleUpdateRecording(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleDeleteRecording(w http.ResponseWriter, r *http.Request) {
+	claims, ok := r.Context().Value("claims").(*auth.Claims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	id := r.PathValue("id")
+	record, err := s.sessionStore.GetRecordingById(id)
+	if err != nil || record == nil {
+		http.Error(w, "Recording not found", http.StatusNotFound)
+		return
+	}
+
+	if record.UserID != claims.UserID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	if err := s.sessionStore.DeleteRecording(id, claims.UserID); err != nil {
+		http.Error(w, "Failed to delete recording", http.StatusInternalServerError)
+		return
+	}
+
+	_ = s.blobStore.DeleteFile(record.Shortcode)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 

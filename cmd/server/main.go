@@ -15,6 +15,7 @@ import (
 type CombinedStore interface {
 	SaveRecording(recording *server.Recording) error
 	UpdateRecording(recording *server.Recording) error
+	DeleteRecording(id string, userID string) error
 	ListRecordings(userID string) ([]server.Recording, error)
 	GetRecordingByShortcode(shortcode string) (*server.Recording, error)
 	GetRecordingById(id string) (*server.Recording, error)

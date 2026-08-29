@@ -110,6 +110,20 @@ func (s *S3BlobStore) PreviewReplay(shortcode string, maxEvents int) (string, er
 	return s.localCache.PreviewReplay(shortcode, maxEvents)
 }
 
+func (s *S3BlobStore) DeleteFile(shortcode string) error {
+	if s.cfg.Bucket != "" && s.cfg.Endpoint != "" {
+		objectKey := fmt.Sprintf("recordings/%s.replay", shortcode)
+		url := fmt.Sprintf("%s/%s/%s", strings.TrimRight(s.cfg.Endpoint, "/"), s.cfg.Bucket, objectKey)
+		req, err := http.NewRequest(http.MethodDelete, url, nil)
+		if err == nil {
+			if resp, err := s.client.Do(req); err == nil {
+				resp.Body.Close()
+			}
+		}
+	}
+	return s.localCache.DeleteFile(shortcode)
+}
+
 // GetLocalPath returns absolute local file path for shortcode replay.
 func (s *S3BlobStore) GetLocalPath(shortcode string) string {
 	return filepath.Join(s.localCache.dir, shortcode+".replay")

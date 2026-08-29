@@ -102,6 +102,11 @@ func (s *SQLiteStore) UpdateRecording(recording *Recording) error {
 	return nil
 }
 
+func (s *SQLiteStore) DeleteRecording(id string, userID string) error {
+	_, err := s.db.Exec("DELETE FROM recordings WHERE id = ? AND user_id = ?", id, userID)
+	return err
+}
+
 
 func (s *SQLiteStore) GetRecordingById(id string) (*Recording, error) {
 	row := s.db.QueryRow("SELECT id, shortcode, title, user_id, duration, width, height, shell, created_at FROM recordings WHERE id = ?", id)

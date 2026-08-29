@@ -50,8 +50,8 @@ func Upload(serverURL string, filePath string, token string) (string, error) {
     return result["url"], nil
 }
 
-func Login() (*domain.DeviceAuthResponse, error) {
-	resp, err := http.Post("http://localhost:8080/api/auth/device/init", "application/json", bytes.NewReader(nil))
+func Login(serverURL string) (*domain.DeviceAuthResponse, error) {
+	resp, err := http.Post(serverURL+"/api/auth/device/init", "application/json", bytes.NewReader(nil))
 	if err != nil {
 		return nil, fmt.Errorf("failed to start device login: %w", err)
 	}

@@ -40,7 +40,7 @@ func main() {
 		os.Exit(0)
 
 	case "login":
-		resp, err := client.Login()
+		resp, err := client.Login(ServerURL)
 		if err != nil {
 			fmt.Printf("❌ Login failed: %v\n", err)
 			os.Exit(1)

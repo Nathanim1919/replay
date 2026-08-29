@@ -46,8 +46,8 @@
    | `BLOB_STORAGE` | `local` (or `s3`) | Storage mode |
    | `JWT_SECRET` | `generate_random_secure_key_here` | JWT Signing key |
 
-5. Click **Deploy Web Service**. Render will build the Go container and provide a live API URL:
-   `https://replay-backend.onrender.com`
+5. Click **Deploy Web Service**. Render built the Go container and provided your live API URL:
+   `https://replay-backend-dq8p.onrender.com`
 
 ---
 
@@ -59,7 +59,7 @@
    - **Framework Preset:** Next.js
    - **Root Directory:** `web`
 4. Add **Environment Variables**:
-   - `NEXT_PUBLIC_API_URL` = `https://replay-backend.onrender.com` (Your Render backend URL)
+   - `NEXT_PUBLIC_API_URL` = `https://replay-backend-dq8p.onrender.com`
 5. Click **Deploy**. Vercel will build and deploy your web app to a live URL:
    `https://replay-space.vercel.app`
 

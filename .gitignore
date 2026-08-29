@@ -4,5 +4,5 @@ bin/
 config.bat
 node_modules
 *.replay
-replay
-server
+/replay
+/server

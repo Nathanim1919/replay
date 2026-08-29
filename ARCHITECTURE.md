@@ -94,10 +94,15 @@ Below is the planned roadmap for **Phase 4**:
 3. **Dynamic Terminal Window Resizing (`"r"` events):**
    - Smoothly update xterm.js grid dimensions dynamically whenever a terminal window resize event occurs mid-recording.
 
-4. **CI/CD Pipeline & Multi-Architecture Binary Releases:**
+4. **Production Deployment & CLI Refinement (`cmd/replay`, `Dockerfile`, `docker-compose.yml`):** ✅ Completed
+   - Deploy production backend API server, Next.js web application, and database stack to production cloud infrastructure.
+   - Streamline CLI command flags and execution flow for intuitive, single-line session recording and streaming.
+   - Elevate CLI interface with professional, high-definition ANSI ASCII visuals, command hints, and interactive developer options in `replay help`.
+
+5. **CI/CD Pipeline & Multi-Architecture Binary Releases:**
    - GitHub Actions workflow (`.github/workflows/release.yml`) cross-compiling CLI binaries for `linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, and `windows/amd64`.
 
-5. **Production Monitoring & Telemetry Integration:**
+6. **Production Monitoring & Telemetry Integration:**
    - Structured JSON logging (`log/slog`) across API endpoints, HTTP panic recovery middleware, and Sentry error tracing.
 
 ---

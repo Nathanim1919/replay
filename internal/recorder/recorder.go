@@ -4,7 +4,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/Nathanim1919/replay/internal/format"
@@ -124,7 +123,7 @@ func (r *Recorder) Start(outputPath string) error {
 
 	// Step 7: Listen for terminal resize (SIGWINCH)
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGWINCH)
+	notifySIGWINCH(sigCh)
 	go func() {
 		for {
 			select {

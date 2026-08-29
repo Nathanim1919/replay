@@ -15,8 +15,8 @@ import (
 
 // These can be overridden dynamically during `go build` using -ldflags
 var (
-	ServerURL = "http://localhost:8080"
-	Version   = "1.0.0-dev"
+	ServerURL = "https://replay-backend-dq8p.onrender.com"
+	Version   = "1.0.0"
 )
 
 func main() {

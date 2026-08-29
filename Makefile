@@ -1,7 +1,7 @@
 .PHONY: build-cli build-server build-all docker-up docker-down help
 
 VERSION ?= 1.0.0
-SERVER_URL ?= http://localhost:8080
+SERVER_URL ?= https://replay-backend-dq8p.onrender.com
 
 help:
 	@echo "Replay Production & Development Build Utility"

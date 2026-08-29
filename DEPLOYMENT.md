@@ -60,8 +60,8 @@
    - **Root Directory:** `web`
 4. Add **Environment Variables**:
    - `NEXT_PUBLIC_API_URL` = `https://replay-backend-dq8p.onrender.com`
-5. Click **Deploy**. Vercel built and deployed your web app to the live URL:
-   `https://replay-chi.vercel.app`
+5. Click **Deploy**. Vercel will build and deploy your web app to a live URL:
+   `https://replay-space.vercel.app`
 
 ---
 

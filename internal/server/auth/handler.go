@@ -75,14 +75,15 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	// set token in cookie
+	// set token in cookie for same-site and cross-site HTTPS
 	http.SetCookie(w, &http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
 		HttpOnly: true,
 		Path:     "/",
-		SameSite: http.SameSiteLaxMode, 
-	});
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
+	})
 
 	// set refresh token in cookie
 	http.SetCookie(w, &http.Cookie{
@@ -90,8 +91,14 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    refreshToken,
 		HttpOnly: true,
 		Path:     "/",
-		SameSite: http.SameSiteLaxMode, 
-	});
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
+	})
+
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
 }
 
 
@@ -124,15 +131,17 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		Value:    "",
 		HttpOnly: true,
 		Path:     "/",
-		SameSite: http.SameSiteLaxMode,
-	});
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
+	})
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    "",
 		HttpOnly: true,
 		Path:     "/",
-		SameSite: http.SameSiteLaxMode,
-	});
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
+	})
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{

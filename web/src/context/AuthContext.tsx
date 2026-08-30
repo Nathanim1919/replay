@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { API_URL } from "@/lib/api";
+import { API_URL, fetchWithAuth } from "@/lib/api";
 
 interface User {
   id: string;
@@ -33,12 +33,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const signup = async (name: string, email: string, password: string): Promise<User> => { 
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/auth/signup`, {
+      const res = await fetchWithAuth("/api/auth/signup", {
         method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({ name, email, password }),
       });
 
@@ -60,12 +56,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (email: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
+      const res = await fetchWithAuth("/api/auth/login", {
         method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({ email, password }),
       });
 
@@ -91,12 +83,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const me = async (): Promise<User | null> => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/auth/me`, {
+      const res = await fetchWithAuth("/api/auth/me", {
         method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
       });
 
       if (res.ok) {
@@ -123,9 +111,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/auth/logout`, {
+      const res = await fetchWithAuth("/api/auth/logout", {
         method: "POST",
-        credentials: "include",
       });
 
       if (!res.ok) throw new Error("Logout backend request failed");

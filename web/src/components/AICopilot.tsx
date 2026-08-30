@@ -1,125 +1,251 @@
 "use client";
 
-import { useState } from "react";
-import { Sparkles, Send, Terminal, ShieldAlert, CheckCircle2, ArrowRight } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Sparkles, Send, Terminal, ShieldAlert, Check, Copy, Bot, User, Cpu, Play, TerminalSquare } from "lucide-react";
 import { usePlayer } from "@/hooks/usePlayer";
+import { fetchWithAuth } from "@/lib/api";
 import { toast } from "sonner";
 
 interface Message {
+  id: string;
   role: "user" | "assistant";
   text: string;
+  timestamp?: string;
+  codeSnippet?: string;
 }
 
 export default function AICopilot() {
   const { currentTelemetry, currentTime } = usePlayer();
   const [messages, setMessages] = useState<Message[]>([
     {
+      id: "1",
       role: "assistant",
-      text: "👋 Hi! I'm your Replay AI Assistant. Ask me anything about this session, executed commands, or OS telemetry context.",
+      text: "Hello! I am your Replay AI Copilot. I analyze live telemetry, command history, and execution context in real time.",
+      timestamp: "Just now",
     },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || loading) return;
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-    const userMsg = input.trim();
-    setInput("");
-    setMessages((prev) => [...prev, { role: "user", text: userMsg }]);
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, loading]);
+
+  const handleCopyCode = async (id: string, code: string) => {
+    await navigator.clipboard.writeText(code);
+    setCopiedId(id);
+    toast.success("Command copied to clipboard!");
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleSend = async (queryText?: string) => {
+    const textToSend = (queryText || input).trim();
+    if (!textToSend || loading) return;
+
+    if (!queryText) setInput("");
+
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      text: textToSend,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
-    // Simulate AI response stream
-    setTimeout(() => {
-      let aiResponse = "";
-      const lower = userMsg.toLowerCase();
+    try {
+      const contextInfo = `Time Offset: ${currentTime.toFixed(1)}s | PID: ${currentTelemetry?.pid || 1204} | CWD: ${currentTelemetry?.cwd || "/home/app"} | Active Command: ${currentTelemetry?.cmd || "bash"}`;
+      
+      const res = await fetchWithAuth("/api/copilot", {
+        method: "POST",
+        body: JSON.stringify({
+          prompt: textToSend,
+          context: contextInfo,
+        }),
+      });
 
-      if (lower.includes("command") || lower.includes("executed")) {
-        aiResponse = "Based on the terminal session stream, key executed commands include:\n• `cd /tmp` (directory shift)\n• `go build -o bin/app ./...` (compile binary)\n• `exit` (clean exit)";
-      } else if (lower.includes("error") || lower.includes("fail")) {
-        aiResponse = "1 potential error log was detected near timestamp 01:12:\n`error: failed to resolve dependency`\nRecommendation: Verify module cache or vendor dependencies.";
-      } else if (lower.includes("fork") || lower.includes("run")) {
-        aiResponse = `You can fork this session live in your terminal using:\n$ replay fork demo.replay --time=${currentTime.toFixed(1)}`;
+      if (res.ok) {
+        const data = await res.json();
+        const assistantMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          text: data.response || "No analysis returned from Gemini API.",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
       } else {
-        aiResponse = `Analyzing timeline offset ${currentTime.toFixed(1)}s:\n• Active PID: ${currentTelemetry?.pid || "N/A"}\n• Working Directory: ${currentTelemetry?.cwd || "/app"}\nAll DLP security rules are currently active.`;
+        throw new Error("Failed to contact AI copilot server.");
       }
-
-      setMessages((prev) => [...prev, { role: "assistant", text: aiResponse }]);
+    } catch (error) {
+      const assistantMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        text: `⚠️ Copilot Notice: ${error instanceof Error ? error.message : "Service temporary unavailable"}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   };
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 font-mono text-xs text-zinc-300">
-      {/* Header */}
-      <div className="p-3 border-b border-zinc-800/80 bg-zinc-900/50 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-orange-400 font-bold">
-          <Sparkles size={16} /> Replay AI Copilot
+    <div className="flex flex-col h-full bg-slate-950 font-sans text-xs text-slate-200">
+      {/* Sleek Copilot Header */}
+      <div className="px-4 py-3 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20">
+            <Sparkles size={14} className="animate-pulse" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-sm text-white tracking-tight flex items-center gap-1.5">
+              Replay AI Copilot
+              <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-mono border border-emerald-500/20">
+                ACTIVE
+              </span>
+            </h3>
+            <p className="text-[10px] text-slate-400">Contextual session intelligence</p>
+          </div>
         </div>
-        <span className="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">v1.0</span>
+        <div className="flex items-center gap-1.5 font-mono text-[10px] text-slate-400 bg-slate-800/50 px-2 py-1 rounded-md border border-slate-700/50">
+          <Cpu size={12} className="text-purple-400" />
+          <span>GPT-4o Replay Engine</span>
+        </div>
       </div>
 
-      {/* Quick Prompts */}
-      <div className="p-3 border-b border-zinc-800/60 bg-zinc-900/30 flex gap-2 overflow-x-auto">
+      {/* Quick Action Chips */}
+      <div className="px-3 py-2.5 border-b border-slate-800/60 bg-slate-900/30 flex gap-2 overflow-x-auto shrink-0 scrollbar-none">
         <button
-          onClick={() => setInput("What commands were run?")}
-          className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 px-2.5 py-1 rounded text-[11px] text-zinc-300 whitespace-nowrap cursor-pointer"
+          onClick={() => handleSend("What commands were run in this session?")}
+          className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/70 hover:border-indigo-500/50 px-3 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white transition cursor-pointer whitespace-nowrap shadow-xs"
         >
-          ⚡ Commands
+          <Terminal size={12} className="text-indigo-400" />
+          <span>Summarize Commands</span>
         </button>
         <button
-          onClick={() => setInput("Did any errors occur?")}
-          className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 px-2.5 py-1 rounded text-[11px] text-zinc-300 whitespace-nowrap cursor-pointer"
+          onClick={() => handleSend("Did any errors occur?")}
+          className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/70 hover:border-amber-500/50 px-3 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white transition cursor-pointer whitespace-nowrap shadow-xs"
         >
-          🔍 Errors
+          <ShieldAlert size={12} className="text-amber-400" />
+          <span>Audit Errors</span>
         </button>
         <button
-          onClick={() => setInput("How do I fork this session?")}
-          className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 px-2.5 py-1 rounded text-[11px] text-zinc-300 whitespace-nowrap cursor-pointer"
+          onClick={() => handleSend("How do I fork this session locally?")}
+          className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/70 hover:border-emerald-500/50 px-3 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white transition cursor-pointer whitespace-nowrap shadow-xs"
         >
-          🚀 Fork
+          <Play size={12} className="text-emerald-400" />
+          <span>Fork Subshell</span>
         </button>
       </div>
 
       {/* Messages Feed */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {messages.map((m, i) => (
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((m) => (
           <div
-            key={i}
-            className={`p-2.5 rounded-lg border ${
-              m.role === "user"
-                ? "bg-orange-950/30 border-orange-500/30 text-orange-200 ml-6"
-                : "bg-zinc-900/80 border-zinc-800 text-zinc-300 mr-6"
-            }`}
+            key={m.id}
+            className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}
           >
-            <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
+            {/* Avatar */}
+            <div
+              className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-white shadow-xs ${
+                m.role === "user"
+                  ? "bg-gradient-to-tr from-emerald-500 to-teal-600"
+                  : "bg-gradient-to-tr from-indigo-600 to-purple-600"
+              }`}
+            >
+              {m.role === "user" ? <User size={14} /> : <Bot size={14} />}
+            </div>
+
+            {/* Bubble */}
+            <div className={`space-y-2 max-w-[85%] ${m.role === "user" ? "items-end" : "items-start"}`}>
+              <div
+                className={`p-3 rounded-2xl border leading-relaxed shadow-sm text-xs ${
+                  m.role === "user"
+                    ? "bg-indigo-600 text-white border-indigo-500 rounded-tr-xs"
+                    : "bg-slate-900/90 text-slate-200 border-slate-800 rounded-tl-xs"
+                }`}
+              >
+                <p className="whitespace-pre-wrap">{m.text}</p>
+
+                {/* Code Snippet Box */}
+                {m.codeSnippet && (
+                  <div className="mt-2.5 rounded-xl border border-slate-800 bg-slate-950 p-2.5 font-mono text-[11px] text-emerald-400 relative overflow-x-auto group">
+                    <div className="flex items-center justify-between mb-1 pb-1 border-b border-slate-800 text-[10px] text-slate-500 uppercase tracking-wider font-sans">
+                      <span className="flex items-center gap-1">
+                        <TerminalSquare size={10} /> Terminal Code
+                      </span>
+                      <button
+                        onClick={() => handleCopyCode(m.id, m.codeSnippet!)}
+                        className="hover:text-white transition cursor-pointer flex items-center gap-1"
+                      >
+                        {copiedId === m.id ? (
+                          <>
+                            <Check size={10} className="text-emerald-400" />
+                            <span className="text-emerald-400">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={10} />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <pre className="whitespace-pre-wrap font-mono leading-relaxed">{m.codeSnippet}</pre>
+                  </div>
+                )}
+              </div>
+
+              <span className="text-[10px] text-slate-500 font-mono block px-1">
+                {m.timestamp}
+              </span>
+            </div>
           </div>
         ))}
 
         {loading && (
-          <div className="p-2.5 rounded-lg border bg-zinc-900/80 border-zinc-800 text-zinc-400 mr-6 flex items-center gap-2">
-            <div className="w-3 h-3 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
-            Analyzing session stream...
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shrink-0">
+              <Bot size={14} />
+            </div>
+            <div className="p-3 rounded-2xl rounded-tl-xs bg-slate-900 border border-slate-800 text-slate-400 text-xs flex items-center gap-2">
+              <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+              <span>Analyzing telemetry timeline...</span>
+            </div>
           </div>
         )}
+
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Box */}
-      <form onSubmit={handleSend} className="p-3 border-t border-zinc-800 bg-zinc-900/50 flex gap-2">
+      {/* Interactive Input Bar */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSend();
+        }}
+        className="p-3 border-t border-slate-800/80 bg-slate-900/60 backdrop-blur-md flex items-center gap-2 shrink-0"
+      >
         <input
           type="text"
-          placeholder="Ask AI about this session..."
+          placeholder="Ask AI Copilot about commands, errors, or PIDs..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className="flex-1 bg-zinc-950 border border-zinc-800 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-zinc-700"
+          className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition font-sans"
         />
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white px-3 py-1.5 rounded cursor-pointer transition-colors"
+          className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white p-2 rounded-xl cursor-pointer transition shadow-md shadow-indigo-600/20"
         >
-          <Send size={14} />
+          <Send size={15} />
         </button>
       </form>
     </div>

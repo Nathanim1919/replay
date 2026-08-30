@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Nathanim1919/replay/internal/ai"
 	"github.com/Nathanim1919/replay/internal/format"
 	"github.com/Nathanim1919/replay/internal/server/auth"
 	"github.com/google/uuid"
@@ -81,11 +82,13 @@ func (s *Server) Router() http.Handler {
     // 1. WRAP THIS ROUTE WITH THE MIDDLEWARE
     mux.Handle("POST /api/auth/device/approve", auth.AuthMiddleware(http.HandlerFunc(s.authHandler.DeviceApprove)))
     
-    mux.HandleFunc("POST /api/auth/signup", s.authHandler.Register)
     mux.HandleFunc("POST /api/auth/login", s.authHandler.Login)
 	mux.HandleFunc("POST /api/auth/logout", s.authHandler.Logout)
     mux.Handle("GET /api/auth/me", auth.AuthMiddleware(http.HandlerFunc(s.authHandler.Me)))
     
+    // AI Copilot endpoint powered by Gemini
+    mux.HandleFunc("POST /api/copilot", s.handleAICopilot)
+
     // ... rest of your router
     return cors(mux)
 }
@@ -332,4 +335,36 @@ func generateShortcode(length int) string {
 		b[i] = charset[rand.Intn(len(charset))]
 	}
 	return string(b)
+}
+
+func (s *Server) handleAICopilot(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		Prompt  string `json:"prompt"`
+		Context string `json:"context"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	if payload.Prompt == "" {
+		http.Error(w, "prompt is required", http.StatusBadRequest)
+		return
+	}
+
+	ans, err := ai.AskGeminiCopilot(payload.Prompt, payload.Context)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"response": fmt.Sprintf("⚠️ AI Notice: %v", err),
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"response": ans,
+	})
 }

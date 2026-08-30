@@ -45,6 +45,7 @@
    | `DATABASE_URL` | `postgres://...` | Connection URI from Step 1 |
    | `BLOB_STORAGE` | `local` (or `s3`) | Storage mode |
    | `JWT_SECRET` | `generate_random_secure_key_here` | JWT Signing key |
+   | `WEB_URL` | `https://replay.nathanim.dev` | Frontend app custom domain |
 
 5. Click **Deploy Web Service**. Render built the Go container and provided your live API URL:
    `https://replay-backend-dq8p.onrender.com`
@@ -60,8 +61,7 @@
    - **Root Directory:** `web`
 4. Add **Environment Variables**:
    - `NEXT_PUBLIC_API_URL` = `https://replay-backend-dq8p.onrender.com`
-5. Click **Deploy**. Vercel will build and deploy your web app to a live URL:
-   `https://replay-space.vercel.app`
+5. Click **Deploy** & add custom domain **`replay.nathanim.dev`** under Vercel Project Domains.
 
 ---
 

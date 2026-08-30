@@ -43,6 +43,7 @@ services:
       AWS_ACCESS_KEY_ID: "minioadmin"
       AWS_SECRET_ACCESS_KEY: "minioadminpassword"
       JWT_SECRET: "production_super_secret_jwt_key_replay"
+      WEB_URL: "https://replay.nathanim.dev"
     ports:
       - "8080:8080"
     depends_on:

@@ -123,7 +123,7 @@ console.log(player.getCurrentCommand());`,
       "One-click embed code generator",
     ],
     codeSnippet: `<iframe
-  src="https://replay.sh/embed/sess_9281"
+  src="https://replay.nathanim.dev/embed/sess_9281"
   width="100%"
   height="400"
   frameborder="0"

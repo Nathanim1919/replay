@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -128,7 +129,12 @@ func (h *Handler) DeviceInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.DeviceStore.Create("http://localhost:3000")
+	webURL := os.Getenv("WEB_URL")
+	if webURL == "" {
+		webURL = "https://replay.nathanim.dev"
+	}
+
+	resp, err := h.DeviceStore.Create(webURL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

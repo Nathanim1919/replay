@@ -242,7 +242,7 @@ func printHelp() {
 
 	// Footer Link
 	fmt.Printf("%sDOCUMENTATION & COMMUNITY%s\n", Bold, Reset)
-	fmt.Printf("  🌐 Web App & Replays: %shttps://replay.space%s\n\n", Cyan, Reset)
+	fmt.Printf("  🌐 Web App & Replays: %shttps://replay.nathanim.dev%s\n\n", Cyan, Reset)
 }
 
 

@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -37,19 +38,27 @@ func NewServer(sessionStore RecordingStore, blobStore BlobStore, authHandler aut
 	return &Server{sessionStore: sessionStore, blobStore: blobStore, authHandler: authHandler}
 }
 
-// Example of custom CORSMiddleware function
+func getWebURL() string {
+	if url := os.Getenv("WEB_URL"); url != "" {
+		return url
+	}
+	return "https://replay.nathanim.dev"
+}
+
 func cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		} else {
+			w.Header().Set("Access-Control-Allow-Origin", getWebURL())
+		}
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-		// Handle preflight requests
 		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent) // ✅ Explicitly return 204 for OPTIONS
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -158,7 +167,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{
 		"shortcode": shortcode,
-		"url":       fmt.Sprintf("http://localhost:3000/s/%s", shortcode),
+		"url":       fmt.Sprintf("%s/s/%s", getWebURL(), shortcode),
 	})
 
 }

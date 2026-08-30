@@ -53,7 +53,7 @@ const CODE_TABS: CodeTab[] = [
       { text: "🛡️ DLP Redactor: Active (1 secret auto-redacted: AWS_ACCESS_KEY)", color: "text-purple-400" },
       { text: "💾 Session saved locally (42.8 KB Zstd compressed)", color: "text-slate-400" },
       { text: "☁️ Uploading stream to cloud...", color: "text-blue-400" },
-      { text: "🔗 Shareable Replay Link: https://replay.space/s/x8f2k9", color: "text-emerald-400 font-mono font-bold" },
+      { text: "🔗 Shareable Replay Link: https://replay.nathanim.dev/s/x8f2k9", color: "text-emerald-400 font-mono font-bold" },
     ],
   },
   {

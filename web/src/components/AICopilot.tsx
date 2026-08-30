@@ -57,7 +57,15 @@ export default function AICopilot() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const assistantMsgId = (Date.now() + 1).toString();
+    const initialAssistantMsg: Message = {
+      id: assistantMsgId,
+      role: "assistant",
+      text: "",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages((prev) => [...prev, userMsg, initialAssistantMsg]);
     setLoading(true);
 
     try {
@@ -71,26 +79,55 @@ export default function AICopilot() {
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        const assistantMsg: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          text: data.response || "No analysis returned from Gemini API.",
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        setMessages((prev) => [...prev, assistantMsg]);
-      } else {
-        throw new Error("Failed to contact AI copilot server.");
+      if (!res.ok || !res.body) {
+        throw new Error("Failed to connect to streaming copilot server.");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
+
+        for (const part of parts) {
+          const lines = part.split("\n");
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith("data: ")) {
+              const dataStr = trimmed.slice(6);
+              if (dataStr === "[DONE]") break;
+              try {
+                const parsed = JSON.parse(dataStr);
+                if (parsed.token) {
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantMsgId
+                        ? { ...msg, text: msg.text + parsed.token }
+                        : msg
+                    )
+                  );
+                }
+              } catch {
+                // ignore unparseable chunk
+              }
+            }
+          }
+        }
       }
     } catch (error) {
-      const assistantMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        text: `⚠️ Copilot Notice: ${error instanceof Error ? error.message : "Service temporary unavailable"}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMsgId
+            ? { ...msg, text: `⚠️ Copilot Notice: ${error instanceof Error ? error.message : "Service temporary unavailable"}` }
+            : msg
+        )
+      );
     } finally {
       setLoading(false);
     }

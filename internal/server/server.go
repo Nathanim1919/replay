@@ -353,18 +353,11 @@ func (s *Server) handleAICopilot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ans, err := ai.AskGeminiCopilot(payload.Prompt, payload.Context)
-	if err != nil {
+	if err := ai.StreamGeminiCopilot(payload.Prompt, payload.Context, w); err != nil {
+		// Fallback error logging if headers not flushed yet
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]string{
-			"response": fmt.Sprintf("⚠️ AI Notice: %v", err),
+			"error": err.Error(),
 		})
-		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]string{
-		"response": ans,
-	})
 }

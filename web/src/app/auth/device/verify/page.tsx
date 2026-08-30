@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { API_URL } from "@/lib/api";
 
 function DeviceVerifyForm() {
   const searchParams = useSearchParams();
@@ -22,7 +23,7 @@ function DeviceVerifyForm() {
     setMessage("");
 
     try {
-      const res = await fetch("http://localhost:8080/api/auth/device/approve", {
+      const res = await fetch(`${API_URL}/api/auth/device/approve`, {
         method: "POST",
         credentials: "include",
         headers: {

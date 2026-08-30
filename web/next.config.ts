@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://replay-backend-dq8p.onrender.com";
+
 const nextConfig: NextConfig = {
   images: {
     qualities: [75, 100],
@@ -8,7 +10,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:8080/api/:path*",
+        destination: `${apiUrl}/api/:path*`,
       },
     ];
   },

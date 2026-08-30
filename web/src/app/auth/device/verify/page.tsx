@@ -1,11 +1,15 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { API_URL } from "@/lib/api";
+import { useSearchParams, useRouter } from "next/navigation";
+import { fetchWithAuth } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
 
 function DeviceVerifyForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const userCode = searchParams.get("user_code") ?? "";
   const [status, setStatus] = useState<"idle" | "loading" | "approved" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -23,17 +27,16 @@ function DeviceVerifyForm() {
     setMessage("");
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/device/approve`, {
+      const res = await fetchWithAuth("/api/auth/device/approve", {
         method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({ user_code: userCode }),
       });
 
       if (!res.ok) {
         const text = await res.text();
+        if (res.status === 401) {
+          throw new Error("You must be logged in to approve this device.");
+        }
         throw new Error(text || "Approval failed");
       }
 
@@ -53,6 +56,12 @@ function DeviceVerifyForm() {
         Confirm the code below to allow the CLI to finish logging in.
       </p>
 
+      {user && (
+        <div className="mt-4 text-xs text-slate-400 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/50">
+          Logged in as <span className="font-semibold text-emerald-400">{user.email}</span>
+        </div>
+      )}
+
       <div className="mt-6 rounded-xl border border-slate-700 bg-slate-950 p-4">
         <div className="text-xs uppercase tracking-[0.3em] text-slate-500">User code</div>
         <div className="mt-2 text-3xl font-mono font-bold tracking-[0.4em] text-emerald-400">
@@ -60,14 +69,26 @@ function DeviceVerifyForm() {
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={handleApprove}
-        disabled={!hasUserCode || status === "loading" || status === "approved"}
-        className="mt-6 w-full rounded-xl bg-emerald-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {status === "loading" ? "Approving..." : status === "approved" ? "Approved" : "Approve device"}
-      </button>
+      {!isLoading && !isAuthenticated ? (
+        <div className="mt-6 space-y-3">
+          <p className="text-sm text-amber-400">You must be logged into your account to approve this device.</p>
+          <Link
+            href={`/login?redirect=/auth/device/verify?user_code=${userCode}`}
+            className="block w-full text-center rounded-xl bg-emerald-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400"
+          >
+            Log in to Approve
+          </Link>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={handleApprove}
+          disabled={!hasUserCode || status === "loading" || status === "approved" || isLoading}
+          className="mt-6 w-full rounded-xl bg-emerald-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {status === "loading" ? "Approving..." : status === "approved" ? "Approved" : "Approve device"}
+        </button>
+      )}
 
       {!hasUserCode ? (
         <p className="mt-4 text-sm text-rose-400">Missing user code in the URL.</p>

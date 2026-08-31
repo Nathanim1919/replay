@@ -6,6 +6,8 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { fetchWithAuth } from "@/lib/api";
 import { toast } from "sonner";
 
+import ReactMarkdown from "react-markdown";
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -209,7 +211,38 @@ export default function AICopilot() {
                     : "bg-slate-900/90 text-slate-200 border-slate-800 rounded-tl-xs"
                 }`}
               >
-                <p className="whitespace-pre-wrap">{m.text}</p>
+                {m.role === "user" ? (
+                  <p className="whitespace-pre-wrap">{m.text}</p>
+                ) : (
+                  <div className="prose prose-invert max-w-none text-xs leading-relaxed space-y-2">
+                    <ReactMarkdown
+                      components={{
+                        h1: ({ children }) => <h1 className="text-sm font-bold text-white border-b border-slate-800 pb-1 mt-2 mb-1">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-xs font-bold text-indigo-300 mt-2 mb-1">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-xs font-semibold text-slate-200 mt-1.5 mb-1">{children}</h3>,
+                        p: ({ children }) => <p className="mb-1.5 text-slate-200 leading-relaxed">{children}</p>,
+                        strong: ({ children }) => <strong className="font-semibold text-emerald-400">{children}</strong>,
+                        ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-1.5 pl-1 text-slate-300">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-1.5 pl-1 text-slate-300">{children}</ol>,
+                        li: ({ children }) => <li className="text-xs text-slate-300 leading-snug">{children}</li>,
+                        code: ({ className, children, ...props }) => {
+                          const isInline = !className;
+                          return isInline ? (
+                            <code className="bg-slate-800 text-emerald-300 font-mono text-[11px] px-1.5 py-0.5 rounded border border-slate-700/60" {...props}>
+                              {children}
+                            </code>
+                          ) : (
+                            <div className="my-2 rounded-xl border border-slate-800 bg-slate-950 p-3 font-mono text-[11px] text-emerald-400 overflow-x-auto">
+                              <pre className="whitespace-pre-wrap leading-relaxed">{children}</pre>
+                            </div>
+                          );
+                        },
+                      }}
+                    >
+                      {m.text}
+                    </ReactMarkdown>
+                  </div>
+                )}
 
                 {/* Code Snippet Box */}
                 {m.codeSnippet && (

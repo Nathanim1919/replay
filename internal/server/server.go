@@ -82,6 +82,7 @@ func (s *Server) Router() http.Handler {
     // 1. WRAP THIS ROUTE WITH THE MIDDLEWARE
     mux.Handle("POST /api/auth/device/approve", auth.AuthMiddleware(http.HandlerFunc(s.authHandler.DeviceApprove)))
     
+    mux.HandleFunc("POST /api/auth/signup", s.authHandler.Register)
     mux.HandleFunc("POST /api/auth/login", s.authHandler.Login)
 	mux.HandleFunc("POST /api/auth/logout", s.authHandler.Logout)
     mux.Handle("GET /api/auth/me", auth.AuthMiddleware(http.HandlerFunc(s.authHandler.Me)))

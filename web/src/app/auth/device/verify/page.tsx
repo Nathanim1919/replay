@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { fetchWithAuth } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-import { Terminal, CheckCircle2, Lock, ShieldCheck, Sparkles, AlertCircle, ArrowRight } from "lucide-react";
 
 function DeviceVerifyForm() {
   const searchParams = useSearchParams();
@@ -19,7 +18,7 @@ function DeviceVerifyForm() {
   const handleApprove = async () => {
     if (!hasUserCode) {
       setStatus("error");
-      setMessage("Missing user verification code.");
+      setMessage("Missing verification code.");
       return;
     }
 
@@ -41,7 +40,7 @@ function DeviceVerifyForm() {
       }
 
       setStatus("approved");
-      setMessage("Device successfully authorized! Your terminal is ready to go.");
+      setMessage("Device authorized successfully. You can return to your terminal.");
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Approval failed.");
@@ -49,84 +48,67 @@ function DeviceVerifyForm() {
   };
 
   return (
-    <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/70 p-8 sm:p-10 shadow-2xl backdrop-blur-2xl transition-all">
-      {/* Background Ambient Glow Effects */}
-      <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-16 -left-16 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl" />
-
-      {/* Header & Logo */}
-      <div className="flex items-center justify-between border-b border-slate-800/80 pb-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 font-bold shadow-lg shadow-emerald-500/20">
-            <Terminal size={20} />
-          </div>
-          <div>
-            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-emerald-400">
-              Security Portal
-            </span>
-            <h2 className="text-lg font-extrabold text-white tracking-tight">Replay Device Link</h2>
-          </div>
+    <div className="w-full max-w-[400px] rounded-2xl border border-zinc-800/90 bg-zinc-950 p-7 shadow-2xl font-sans">
+      {/* Top Header */}
+      <div className="flex items-center justify-between pb-5 border-b border-zinc-900">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[11px] font-bold tracking-widest text-zinc-100 uppercase">REPLAY</span>
+          <span className="text-zinc-700 text-xs">/</span>
+          <span className="font-mono text-[11px] text-zinc-400">CLI AUTH</span>
         </div>
-
-        <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-400 font-mono">
-          <ShieldCheck size={13} />
-          <span>OAuth 2.0</span>
-        </div>
+        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 bg-zinc-900/80 px-2.5 py-1 rounded-md border border-zinc-800">
+          Device Pair
+        </span>
       </div>
 
-      <div className="mt-6 space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+      {/* Title & Description */}
+      <div className="mt-6 space-y-1">
+        <h1 className="text-xl font-bold tracking-tight text-zinc-100">
           Authorize Terminal CLI
         </h1>
-        <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-          Confirm the device code generated in your terminal to securely pair your active session with your Replay cloud account.
+        <p className="text-[13px] text-zinc-400 leading-relaxed font-normal">
+          Verify the code generated in your command line to grant access to your Replay account.
         </p>
       </div>
 
-      {/* User Context Banner */}
+      {/* User Context */}
       {user && (
-        <div className="mt-5 flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-xs text-slate-300">
-          <span className="text-slate-400 font-mono text-[11px]">Authenticated Account:</span>
-          <span className="font-semibold text-emerald-400 font-mono flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            {user.email}
-          </span>
+        <div className="mt-5 rounded-xl border border-zinc-800/80 bg-zinc-900/50 px-4 py-3 flex items-center justify-between text-xs font-mono">
+          <span className="text-zinc-500 text-[11px]">Logged in as:</span>
+          <span className="text-zinc-200 font-medium">{user.email}</span>
         </div>
       )}
 
-      {/* User Verification Code Box */}
-      <div className="mt-6 space-y-2">
-        <div className="flex items-center justify-between text-[11px] uppercase tracking-wider font-mono text-slate-400">
-          <span>Verification Code</span>
-          <span>8-Digit Token</span>
+      {/* Verification Code Box */}
+      <div className="mt-5 space-y-1.5">
+        <div className="flex justify-between text-[11px] font-mono uppercase tracking-wider text-zinc-500">
+          <span>Verification Token</span>
         </div>
-        <div className="relative flex items-center justify-center rounded-2xl border border-slate-700/80 bg-slate-950/80 p-6 shadow-inner">
-          <div className="font-mono text-4xl sm:text-5xl font-extrabold tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
+        <div className="rounded-xl border border-zinc-800/90 bg-zinc-900/80 py-5 text-center shadow-inner">
+          <div className="font-mono text-3xl sm:text-4xl font-bold tracking-[0.35em] text-white">
             {userCode || "--------"}
           </div>
         </div>
       </div>
 
-      {/* Action CTA Buttons */}
+      {/* CTA Buttons */}
       {!isLoading && !isAuthenticated ? (
         <div className="mt-6 space-y-3">
-          <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
-            <Lock size={16} className="shrink-0 text-amber-400" />
-            <span>Please log in to your account first to approve this terminal session.</span>
-          </div>
-          <div className="flex flex-col gap-2">
+          <p className="text-xs text-zinc-400 text-center font-mono">
+            Authentication required to complete device setup.
+          </p>
+          <div className="space-y-2">
             <Link
               href={`/signin?redirect=${encodeURIComponent(`/auth/device/verify?user_code=${userCode}`)}`}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-5 py-3.5 font-bold text-slate-950 transition hover:opacity-95 shadow-lg shadow-emerald-500/25 text-sm"
+              className="flex w-full items-center justify-center rounded-xl bg-white px-5 py-3.5 text-sm font-semibold text-zinc-950 transition-all hover:bg-zinc-200 active:scale-[0.99] cursor-pointer shadow-sm"
             >
-              <span>Sign In & Authorize Device</span>
-              <ArrowRight size={16} />
+              Sign In & Authorize
             </Link>
             <Link
               href={`/signup?redirect=${encodeURIComponent(`/auth/device/verify?user_code=${userCode}`)}`}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/80 px-5 py-2.5 font-semibold text-slate-200 transition hover:bg-slate-800 text-xs"
+              className="flex w-full items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/80 px-5 py-2.5 text-xs font-medium text-zinc-300 transition-all hover:bg-zinc-800 hover:text-white active:scale-[0.99] cursor-pointer"
             >
-              <span>New user? Create an account</span>
+              Create New Account
             </Link>
           </div>
         </div>
@@ -135,51 +117,28 @@ function DeviceVerifyForm() {
           type="button"
           onClick={handleApprove}
           disabled={!hasUserCode || status === "loading" || status === "approved" || isLoading}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-5 py-3.5 font-bold text-slate-950 transition-all hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/20 text-sm cursor-pointer"
+          className="mt-6 w-full rounded-xl bg-white px-5 py-3.5 text-sm font-semibold text-zinc-950 transition-all hover:bg-zinc-200 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-sm"
         >
-          {status === "loading" ? (
-            <>
-              <div className="h-4 w-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-              <span>Authorizing Terminal...</span>
-            </>
-          ) : status === "approved" ? (
-            <>
-              <CheckCircle2 size={18} className="text-slate-950" />
-              <span>Device Approved!</span>
-            </>
-          ) : (
-            <>
-              <Sparkles size={16} className="text-slate-950" />
-              <span>Approve Device</span>
-            </>
-          )}
+          {status === "loading" ? "Authorizing..." : status === "approved" ? "Approved" : "Approve Device"}
         </button>
       )}
 
-      {/* Dynamic Status / Error Messages */}
+      {/* Feedback Messages */}
       {!hasUserCode && (
-        <div className="mt-4 flex items-center gap-2 text-xs text-rose-400 font-mono">
-          <AlertCircle size={14} />
-          <span>No user verification code provided in URL.</span>
-        </div>
+        <p className="mt-3.5 text-xs text-zinc-500 font-mono text-center">
+          Missing user verification code in URL.
+        </p>
       )}
 
       {message && (
-        <div
-          className={`mt-4 flex items-center gap-2 rounded-xl p-3 text-xs font-mono border ${
-            status === "error"
-              ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
-              : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-          }`}
-        >
-          {status === "error" ? <AlertCircle size={14} /> : <CheckCircle2 size={14} />}
-          <span>{message}</span>
+        <div className="mt-3.5 rounded-xl border border-zinc-800 bg-zinc-900/70 p-3 text-center text-xs font-mono text-zinc-300">
+          {message}
         </div>
       )}
 
-      {/* Footer Info */}
-      <div className="mt-6 pt-4 border-t border-slate-800/60 text-center text-[11px] text-slate-500 font-mono">
-        Once approved, your active terminal session will connect automatically.
+      {/* Footer */}
+      <div className="mt-6 pt-4 border-t border-zinc-900 text-center text-[11px] font-mono text-zinc-500">
+        Your CLI session will pair automatically once approved.
       </div>
     </div>
   );
@@ -187,8 +146,8 @@ function DeviceVerifyForm() {
 
 export default function DeviceVerifyPage() {
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-slate-950 text-white grid place-items-center p-4">
-      <Suspense fallback={<div className="text-slate-400 font-mono text-sm">Loading verification session...</div>}>
+    <div className="min-h-screen w-full bg-black text-white grid place-items-center p-4 font-sans selection:bg-zinc-800 selection:text-white">
+      <Suspense fallback={<div className="text-zinc-600 font-mono text-xs">Loading verification...</div>}>
         <DeviceVerifyForm />
       </Suspense>
     </div>

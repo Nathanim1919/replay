@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   Terminal,
   Heart,
   Copy,
   Check,
   ArrowUpRight,
-  Sparkles,
   ShieldCheck,
 } from "lucide-react";
 
@@ -57,74 +55,62 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-gray-100 border-t border-gray-300 relative py-16 text-black">
-      <div className="w-[95%] md:w-[80%] mx-auto space-y-12">
+    <footer className="bg-black text-white border-t border-zinc-800 py-14 font-mono selection:bg-emerald-500 selection:text-black">
+      <div className="w-[95%] md:w-[85%] max-w-6xl mx-auto space-y-12">
         
-        {/* TOP BRAND & CLI RECORD CARD */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 pb-12 border-b border-gray-300">
+        {/* TOP BRAND & CLI QUICK RECORD CARD */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-10 border-b border-zinc-900">
           
           {/* BRAND INFO */}
-          <div className="lg:col-span-6 space-y-4">
+          <div className="lg:col-span-7 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-black text-white shadow-sm">
-                <Terminal className="w-5 h-5" />
+              <div className="flex items-center justify-center w-8 h-8 bg-white text-black font-bold">
+                <Terminal className="w-4 h-4" />
               </div>
-              <span className="text-2xl font-extrabold tracking-tight text-black font-sans">
-                Replay
+              <span className="text-xl font-bold tracking-tight text-white uppercase">
+                REPLAY ENGINE
               </span>
-              <span className="px-2.5 py-0.5 text-[11px] font-mono font-bold uppercase tracking-wider text-black bg-gray-200 border border-gray-300 rounded-full">
-                v1.0.0
+              <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 bg-zinc-900 border border-zinc-800">
+                V1.0.0
               </span>
             </div>
 
-            <p className="text-sm sm:text-base text-gray-700 leading-relaxed max-w-md">
-              Capture, replay, and share pixel-perfect CLI terminal sessions directly in the browser. High-performance Go binaries with zero setup.
+            <p className="text-xs text-zinc-400 leading-relaxed max-w-lg">
+              Capture, replay, and share pixel-perfect CLI terminal sessions directly in the browser. Powered by native Go pseudo-terminals and stream compression.
             </p>
 
             {/* LIVE SYSTEM STATUS BADGE */}
-            <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white border border-gray-300 text-xs font-semibold text-gray-800 shadow-2xs">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <span className="font-mono text-xs font-bold tracking-tight text-gray-900">
-                All Systems Operational
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-[11px] font-mono text-zinc-300">
+              <span className="w-2 h-2 bg-emerald-400 animate-pulse" />
+              <span className="uppercase text-emerald-400 font-bold">
+                SYSTEM STATUS: OPERATIONAL
               </span>
             </div>
           </div>
 
           {/* QUICK CLI COMMAND COPY BOX */}
-          <div className="lg:col-span-6 flex flex-col justify-center items-start lg:items-end">
-            <div className="w-full max-w-md p-6 rounded-2xl bg-white border border-gray-300 shadow-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-mono text-gray-600 font-bold">
-                  <Sparkles className="w-4 h-4 text-black" />
-                  <span>Start recording session</span>
-                </div>
-                <span className="text-xs text-gray-500 font-mono">Bash / Zsh</span>
+          <div className="lg:col-span-5 flex flex-col justify-center">
+            <div className="p-4 bg-zinc-950 border border-zinc-800 space-y-2">
+              <div className="flex items-center justify-between text-[10px] text-zinc-500 uppercase tracking-wider">
+                <span>TERMINAL CLI ENTRY</span>
+                <span>BASH / ZSH</span>
               </div>
 
-              <div className="flex items-center justify-between gap-3 bg-gray-100 border border-gray-300 rounded-xl px-4 py-3 font-mono text-xs">
-                <div className="flex items-center gap-2 truncate text-black font-bold">
-                  <span className="text-gray-400">$</span>
+              <div className="flex items-center justify-between gap-3 bg-black border border-zinc-900 p-2.5 font-mono text-xs">
+                <div className="flex items-center gap-2 truncate text-white font-bold">
+                  <span className="text-emerald-400">$</span>
                   <span className="select-all">replay record</span>
                 </div>
 
                 <button
                   onClick={handleCopyInstall}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-black hover:text-white bg-white hover:bg-black border border-gray-300 hover:border-black rounded-lg transition cursor-pointer shrink-0"
-                  title="Copy command to clipboard"
+                  className="px-2.5 py-1 text-[10px] font-bold text-black bg-white hover:bg-zinc-200 transition cursor-pointer shrink-0"
+                  title="Copy command"
                 >
                   {copied ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-emerald-600">Copied</span>
-                    </>
+                    <span className="text-emerald-700 font-bold">COPIED</span>
                   ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copy</span>
-                    </>
+                    <span>COPY</span>
                   )}
                 </button>
               </div>
@@ -132,24 +118,22 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* NAVIGATION LINKS GRID */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-2 border-b border-gray-300">
+        {/* NAVIGATION LINKS GRID WITH ANTHROPIC HOVER EFFECT */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-2 border-b border-zinc-900">
           
           {/* PRODUCT */}
-          <div>
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-black mb-4 font-sans">
-              Product Suite
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+              PRODUCT SUITE
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-2.5 group/product">
               {footerNavigation.product.map((item) => (
                 <li key={item.name}>
                   <a
                     href={item.href}
-                    className="text-sm font-medium text-gray-600 hover:text-black transition inline-flex items-center gap-1 group"
+                    className="text-xs text-zinc-400 group-hover/product:opacity-40 hover:!opacity-100 hover:text-emerald-400 transition-all duration-200 inline-flex items-center gap-1"
                   >
-                    <span className="group-hover:translate-x-0.5 transition-transform">
-                      {item.name}
-                    </span>
+                    <span>{item.name}</span>
                   </a>
                 </li>
               ))}
@@ -157,24 +141,22 @@ export default function Footer() {
           </div>
 
           {/* DEVELOPERS */}
-          <div>
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-black mb-4 font-sans">
-              Developers
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+              DEVELOPERS
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-2.5 group/devs">
               {footerNavigation.developers.map((item) => (
                 <li key={item.name}>
                   <a
                     href={item.href}
                     target={item.external ? "_blank" : undefined}
                     rel={item.external ? "noopener noreferrer" : undefined}
-                    className="text-sm font-medium text-gray-600 hover:text-black transition inline-flex items-center gap-1 group"
+                    className="text-xs text-zinc-400 group-hover/devs:opacity-40 hover:!opacity-100 hover:text-emerald-400 transition-all duration-200 inline-flex items-center gap-1"
                   >
-                    <span className="group-hover:translate-x-0.5 transition-transform">
-                      {item.name}
-                    </span>
+                    <span>{item.name}</span>
                     {item.external && (
-                      <ArrowUpRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-black transition" />
+                      <ArrowUpRight className="w-3 h-3 text-zinc-600" />
                     )}
                   </a>
                 </li>
@@ -183,24 +165,22 @@ export default function Footer() {
           </div>
 
           {/* COMMUNITY */}
-          <div>
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-black mb-4 font-sans">
-              Community
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+              COMMUNITY
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-2.5 group/community">
               {footerNavigation.community.map((item) => (
                 <li key={item.name}>
                   <a
                     href={item.href}
                     target={item.external ? "_blank" : undefined}
                     rel={item.external ? "noopener noreferrer" : undefined}
-                    className="text-sm font-medium text-gray-600 hover:text-black transition inline-flex items-center gap-1 group"
+                    className="text-xs text-zinc-400 group-hover/community:opacity-40 hover:!opacity-100 hover:text-emerald-400 transition-all duration-200 inline-flex items-center gap-1"
                   >
-                    <span className="group-hover:translate-x-0.5 transition-transform">
-                      {item.name}
-                    </span>
+                    <span>{item.name}</span>
                     {item.external && (
-                      <ArrowUpRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-black transition" />
+                      <ArrowUpRight className="w-3 h-3 text-zinc-600" />
                     )}
                   </a>
                 </li>
@@ -209,26 +189,26 @@ export default function Footer() {
           </div>
 
           {/* OPEN SOURCE */}
-          <div>
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-black mb-4 font-sans">
-              Open Source
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+              OPEN SOURCE
             </h3>
-            <div className="space-y-3 text-sm text-gray-700">
-              <div className="flex items-center gap-2 font-bold text-black">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>100% Free & Open Source</span>
+            <div className="space-y-2.5 text-xs text-zinc-400">
+              <div className="flex items-center gap-1.5 font-bold text-white">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>100% FREE & OPEN SOURCE</span>
               </div>
-              <p className="text-xs leading-relaxed text-gray-600">
-                Replay is distributed under the permissive MIT license. Feel free to embed, adapt, or contribute.
+              <p className="text-[11px] leading-relaxed text-zinc-400">
+                Distributed under the permissive MIT license. Feel free to embed, adapt, or contribute.
               </p>
               <a
                 href="https://github.com/Nathanim1919/replay"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-gray-300 text-xs font-extrabold text-black hover:bg-black hover:text-white transition shadow-2xs mt-1"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 text-xs font-bold text-white border border-zinc-800 transition mt-1"
               >
                 <GithubIcon className="w-3.5 h-3.5" />
-                <span>Star on GitHub</span>
+                <span>STAR ON GITHUB</span>
               </a>
             </div>
           </div>
@@ -236,16 +216,16 @@ export default function Footer() {
         </div>
 
         {/* BOTTOM BAR */}
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-gray-600">
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-zinc-500">
           <p>
-            © {new Date().getFullYear()} Replay Engine. Released under the{" "}
+            © {new Date().getFullYear()} REPLAY ENGINE. RELEASED UNDER THE{" "}
             <a
               href="https://github.com/Nathanim1919/replay/blob/main/LICENSE"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-black hover:underline font-bold"
+              className="text-zinc-300 hover:text-emerald-400 font-bold uppercase underline"
             >
-              MIT License
+              MIT LICENSE
             </a>
             .
           </p>
@@ -255,12 +235,12 @@ export default function Footer() {
               href="https://nathanim.dev"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-gray-700 hover:text-black transition"
+              className="inline-flex items-center gap-1.5 text-zinc-400 hover:text-white transition"
             >
-              <span>Crafted with</span>
-              <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
+              <span>CRAFTED WITH</span>
+              <Heart className="w-3 h-3 text-rose-500 fill-rose-500/20" />
               <span>
-                by <strong className="font-extrabold text-black">Nathanim</strong>
+                BY <strong className="font-bold text-white">NATHANIM</strong>
               </span>
             </a>
 
@@ -268,7 +248,7 @@ export default function Footer() {
               href="https://github.com/Nathanim1919/replay"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 rounded-md hover:bg-gray-200 text-gray-700 hover:text-black transition"
+              className="text-zinc-500 hover:text-white transition"
               aria-label="GitHub Repository"
             >
               <GithubIcon className="w-4 h-4" />

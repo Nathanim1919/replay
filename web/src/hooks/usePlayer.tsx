@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useMemo, useCallback, useRe
 import { parseReplay, computeWaveform, buildSearchIndex, SearchIndex, TelemetryData, ReplayEvent } from "@/lib/replay-parser"
 
 interface PlayerContextType {
+  rawContent: string
   isPlaying: boolean
   currentTime: number
   duration: number
@@ -161,6 +162,7 @@ export function PlayerProvider({ content, children }: { content: string; childre
 
   return (
     <PlayerContext.Provider value={{
+      rawContent: content,
       isPlaying, currentTime, duration, speed, skipIdle, searchIndex, waveform, terminalRef, currentTelemetry,
       play, pause, seek, changeSpeed, toggleSkipIdle
     }}>

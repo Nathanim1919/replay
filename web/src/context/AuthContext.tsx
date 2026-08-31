@@ -71,7 +71,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error("Failed to fetch user data after login");
       }
 
-      router.push("/");
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectUrl = searchParams.get("redirect") || "/";
+      router.push(redirectUrl);
       return currentUser;
     } catch (error) {
       throw error; // Let the page component catch this

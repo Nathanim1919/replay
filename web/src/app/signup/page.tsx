@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import BgImage from "../../../public/signupbg.jpeg";
 import { toast } from "sonner";
 import Image from "next/image";
+import Link from "next/link";
 
 const SignupPage = () => {
   const [name, setName] = useState("");
@@ -102,8 +103,18 @@ const SignupPage = () => {
               >
                 Sign Up
               </button>
-              <p className="self-start">
-                Already have an account? <a href="/signin">Log In</a>
+              <p className="self-start text-xs text-gray-400 mt-2">
+                Already have an account?{" "}
+                <Link
+                  href={
+                    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("redirect")
+                      ? `/signin?redirect=${encodeURIComponent(new URLSearchParams(window.location.search).get("redirect")!)}`
+                      : "/signin"
+                  }
+                  className="text-green-400 font-bold hover:underline"
+                >
+                  Log In
+                </Link>
               </p>
             </div>
           </form>

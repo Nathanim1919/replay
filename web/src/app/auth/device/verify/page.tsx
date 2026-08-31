@@ -114,13 +114,21 @@ function DeviceVerifyForm() {
             <Lock size={16} className="shrink-0 text-amber-400" />
             <span>Please log in to your account first to approve this terminal session.</span>
           </div>
-          <Link
-            href={`/login?redirect=/auth/device/verify?user_code=${userCode}`}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-5 py-3.5 font-bold text-slate-950 transition hover:opacity-95 shadow-lg shadow-emerald-500/25 text-sm"
-          >
-            <span>Log in & Authorize Device</span>
-            <ArrowRight size={16} />
-          </Link>
+          <div className="flex flex-col gap-2">
+            <Link
+              href={`/signin?redirect=${encodeURIComponent(`/auth/device/verify?user_code=${userCode}`)}`}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-5 py-3.5 font-bold text-slate-950 transition hover:opacity-95 shadow-lg shadow-emerald-500/25 text-sm"
+            >
+              <span>Sign In & Authorize Device</span>
+              <ArrowRight size={16} />
+            </Link>
+            <Link
+              href={`/signup?redirect=${encodeURIComponent(`/auth/device/verify?user_code=${userCode}`)}`}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/80 px-5 py-2.5 font-semibold text-slate-200 transition hover:bg-slate-800 text-xs"
+            >
+              <span>New user? Create an account</span>
+            </Link>
+          </div>
         </div>
       ) : (
         <button

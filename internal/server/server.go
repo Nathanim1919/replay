@@ -221,7 +221,7 @@ func (s *Server) handleGetRecording(w http.ResponseWriter, r *http.Request) {
 	shortcode := r.PathValue("shortcode")
 	data, err := s.blobStore.GetFile(shortcode)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Session not found", http.StatusNotFound)
 		return
 	}
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import Player from "@/components/Player";
 import BackgroundImage from "../../../../public/terminalBg.jpeg";
@@ -64,8 +65,27 @@ export default function SessionPage() {
   if (error) {
     return (
       <PageLayout>
-        <div className="z-10 bg-zinc-950 border border-red-500/50 text-red-400 px-6 py-4 font-mono text-xs uppercase tracking-wider">
-          ERROR: {error}
+        <div className="z-10 bg-zinc-950 border border-zinc-800 p-8 max-w-md w-full space-y-4 text-center font-mono">
+          <div className="text-red-400 font-bold text-xs uppercase tracking-widest border-b border-zinc-900 pb-3">
+            [ ERROR: SESSION NOT FOUND ]
+          </div>
+          <p className="text-xs text-zinc-400 leading-relaxed">
+            The requested session <code className="text-white font-bold">{shortcode}</code> could not be found or may have expired.
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Link
+              href="/explore"
+              className="px-3 py-1.5 bg-white text-black font-bold text-xs hover:bg-zinc-200 transition"
+            >
+              EXPLORE REPLAYS
+            </Link>
+            <Link
+              href="/"
+              className="px-3 py-1.5 border border-zinc-800 text-zinc-300 font-bold text-xs hover:text-white transition"
+            >
+              RETURN HOME
+            </Link>
+          </div>
         </div>
       </PageLayout>
     );

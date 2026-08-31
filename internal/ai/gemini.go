@@ -44,7 +44,7 @@ func AskGeminiCopilot(prompt string, sessionContext string) (string, error) {
 		return "", fmt.Errorf("GEMINI_API_KEY environment variable is not configured")
 	}
 
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=%s", apiKey)
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=%s", apiKey)
 
 	systemInstruction := "You are Replay AI Copilot, a senior DevOps & Linux terminal expert embedded inside the Replay Session Engine. " +
 		"Analyze the provided terminal session context and answer user questions concisely with markdown code blocks where applicable."
@@ -111,7 +111,7 @@ func StreamGeminiCopilot(prompt string, sessionContext string, w http.ResponseWr
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")
 
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=%s", apiKey)
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:streamGenerateContent?alt=sse&key=%s", apiKey)
 
 	systemInstruction := "You are Replay AI Copilot, a senior DevOps & Linux terminal expert embedded inside the Replay Session Engine. " +
 		"Analyze the provided terminal session context and answer user questions concisely with markdown code blocks where applicable."
@@ -164,6 +164,13 @@ func StreamGeminiCopilot(prompt string, sessionContext string, w http.ResponseWr
 		var geminiChunk GeminiResponse
 		if err := json.Unmarshal([]byte(rawJSON), &geminiChunk); err != nil {
 			continue
+		}
+
+		if geminiChunk.Error != nil {
+			errPayload, _ := json.Marshal(map[string]string{"token": fmt.Sprintf("\n⚠️ Gemini API Error: %s", geminiChunk.Error.Message)})
+			fmt.Fprintf(w, "data: %s\n\n", errPayload)
+			flusher.Flush()
+			break
 		}
 
 		if len(geminiChunk.Candidates) > 0 && len(geminiChunk.Candidates[0].Content.Parts) > 0 {

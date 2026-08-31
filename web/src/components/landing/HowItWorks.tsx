@@ -26,7 +26,7 @@ const CODE_TABS: CodeTab[] = [
     label: "INSTALLATION",
     step: "01",
     icon: Terminal,
-    command: "curl -fsSL https://raw.githubusercontent.com/Nathanim1919/replay/trunk/install.sh | bash",
+    command: "curl -fsSL https://cdn.jsdelivr.net/gh/Nathanim1919/replay@trunk/install.sh | bash",
     description: "Downloads and verifies the global replay executable to /usr/local/bin.",
     outputLines: [
       { text: "DOWNLOADING REPLAY CLI BINARY...", color: "text-zinc-400" },

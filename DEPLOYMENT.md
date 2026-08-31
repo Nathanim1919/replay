@@ -98,7 +98,7 @@ This generates production-ready binaries in `bin/dist/`:
 Create a quick install script so users can install Replay in a single command.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Nathanim1919/replay/trunk/install.sh | bash
+curl -fsSL https://cdn.jsdelivr.net/gh/Nathanim1919/replay@trunk/install.sh | bash
 ```
 
 ---
@@ -107,7 +107,7 @@ curl -fsSL https://raw.githubusercontent.com/Nathanim1919/replay/trunk/install.s
 
 1. **User Installs CLI:**
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/Nathanim1919/replay/trunk/install.sh | bash
+   curl -fsSL https://cdn.jsdelivr.net/gh/Nathanim1919/replay@trunk/install.sh | bash
    ```
 2. **User Authenticates:**
    ```bash

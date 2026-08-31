@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, Terminal, ShieldAlert, Check, Copy, Bot, User, Cpu, Play, TerminalSquare } from "lucide-react";
+import { Send, Terminal, ShieldAlert, Check, Copy, Bot, User, Play, TerminalSquare } from "lucide-react";
 import { usePlayer } from "@/hooks/usePlayer";
 import { fetchWithAuth } from "@/lib/api";
 import { toast } from "sonner";
-
 import ReactMarkdown from "react-markdown";
 
 interface Message {
@@ -22,10 +21,11 @@ export default function AICopilot() {
     {
       id: "1",
       role: "assistant",
-      text: "Hello! I am your Replay AI Copilot. I analyze live telemetry, command history, and execution context in real time.",
-      timestamp: "Just now",
+      text: "Replay AI Copilot initialized. Analyzing telemetry, command history, and execution context.",
+      timestamp: "00:00",
     },
   ]);
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -39,94 +39,91 @@ export default function AICopilot() {
     scrollToBottom();
   }, [messages, loading]);
 
-  const handleCopyCode = async (id: string, code: string) => {
-    await navigator.clipboard.writeText(code);
-    setCopiedId(id);
-    toast.success("Command copied to clipboard!");
-    setTimeout(() => setCopiedId(null), 2000);
-  };
+  const handleSend = async (textToSend?: string) => {
+    const query = textToSend || input;
+    if (!query.trim() || loading) return;
 
-  const handleSend = async (queryText?: string) => {
-    const textToSend = (queryText || input).trim();
-    if (!textToSend || loading) return;
-
-    if (!queryText) setInput("");
-
+    const userMsgId = Date.now().toString();
     const userMsg: Message = {
-      id: Date.now().toString(),
+      id: userMsgId,
       role: "user",
-      text: textToSend,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: query,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
+
+    setMessages((prev) => [...prev, userMsg]);
+    if (!textToSend) setInput("");
+    setLoading(true);
 
     const assistantMsgId = (Date.now() + 1).toString();
     const initialAssistantMsg: Message = {
       id: assistantMsgId,
       role: "assistant",
       text: "",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
-    setMessages((prev) => [...prev, userMsg, initialAssistantMsg]);
-    setLoading(true);
+    setMessages((prev) => [...prev, initialAssistantMsg]);
+
+    const contextPayload = `Time: ${currentTime}s | PWD: ${currentTelemetry?.cwd || "/"} | Command: ${currentTelemetry?.command || "none"}`;
 
     try {
-      const contextInfo = `Time Offset: ${currentTime.toFixed(1)}s | PID: ${currentTelemetry?.pid || 1204} | CWD: ${currentTelemetry?.cwd || "/home/app"} | Active Command: ${currentTelemetry?.cmd || "bash"}`;
-      
-      const res = await fetchWithAuth("/api/copilot", {
+      const response = await fetchWithAuth("/api/copilot", {
         method: "POST",
         body: JSON.stringify({
-          prompt: textToSend,
-          context: contextInfo,
+          prompt: query,
+          context: contextPayload,
         }),
       });
 
-      if (!res.ok || !res.body) {
-        throw new Error("Failed to connect to streaming copilot server.");
+      if (!response.ok) {
+        throw new Error("Failed to stream AI response");
       }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let buffer = "";
+      if (!response.body) {
+        throw new Error("No response stream body");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = "";
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop() || "";
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
 
-        for (const part of parts) {
-          const lines = part.split("\n");
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (trimmed.startsWith("data: ")) {
-              const dataStr = trimmed.slice(6);
-              if (dataStr === "[DONE]") break;
-              try {
-                const parsed = JSON.parse(dataStr);
-                if (parsed.token) {
-                  setMessages((prev) =>
-                    prev.map((msg) =>
-                      msg.id === assistantMsgId
-                        ? { ...msg, text: msg.text + parsed.token }
-                        : msg
-                    )
-                  );
-                }
-              } catch {
-                // ignore unparseable chunk
-              }
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data: ")) continue;
+
+          const rawData = trimmed.replace("data: ", "");
+          if (rawData === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(rawData);
+            if (parsed.token) {
+              accumulatedText += parsed.token;
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMsgId ? { ...msg, text: accumulatedText } : msg
+                )
+              );
             }
+          } catch {
+            // ignore non-json lines
           }
         }
       }
-    } catch (error) {
+    } catch (err) {
+      console.error("AI Streaming error:", err);
+      toast.error("Failed to fetch response from Copilot");
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === assistantMsgId
-            ? { ...msg, text: `⚠️ Copilot Notice: ${error instanceof Error ? error.message : "Service temporary unavailable"}` }
+            ? { ...msg, text: "Error: Unable to connect to AI copilot service." }
             : msg
         )
       );
@@ -135,104 +132,102 @@ export default function AICopilot() {
     }
   };
 
+  const handleCopyCode = (msgId: string, snippet: string) => {
+    navigator.clipboard.writeText(snippet);
+    setCopiedId(msgId);
+    toast.success("Command copied to clipboard");
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   return (
-    <div className="flex flex-col h-full bg-slate-950 font-sans text-xs text-slate-200">
-      {/* Sleek Copilot Header */}
-      <div className="px-4 py-3 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20">
-            <Sparkles size={14} className="animate-pulse" />
-          </div>
-          <div>
-            <h3 className="font-extrabold text-sm text-white tracking-tight flex items-center gap-1.5">
-              Replay AI Copilot
-              <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-mono border border-emerald-500/20">
-                ACTIVE
-              </span>
-            </h3>
-            <p className="text-[10px] text-slate-400">Contextual session intelligence</p>
-          </div>
+    <div className="flex flex-col h-full bg-black text-white border-l border-zinc-800 font-mono text-xs selection:bg-emerald-500 selection:text-black">
+      {/* Industrial Copilot Header */}
+      <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-950 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <Terminal size={14} className="text-emerald-400" />
+          <h3 className="font-bold text-xs text-white uppercase tracking-wider">
+            AI SESSION COPILOT
+          </h3>
         </div>
-        <div className="flex items-center gap-1.5 font-mono text-[10px] text-slate-400 bg-slate-800/50 px-2 py-1 rounded-md border border-slate-700/50">
-          <Cpu size={12} className="text-purple-400" />
-          <span>GPT-4o Replay Engine</span>
-        </div>
+        <span className="px-2 py-0.5 bg-black border border-zinc-800 text-emerald-400 text-[10px] uppercase font-bold tracking-wider">
+          READY
+        </span>
       </div>
 
-      {/* Quick Action Chips */}
-      <div className="px-3 py-2.5 border-b border-slate-800/60 bg-slate-900/30 flex gap-2 overflow-x-auto shrink-0 scrollbar-none">
+      {/* Quick Action Buttons */}
+      <div className="px-3 py-2 border-b border-zinc-800 bg-zinc-950 flex gap-2 overflow-x-auto shrink-0 scrollbar-none">
         <button
-          onClick={() => handleSend("What commands were run in this session?")}
-          className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/70 hover:border-indigo-500/50 px-3 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white transition cursor-pointer whitespace-nowrap shadow-xs"
+          onClick={() => handleSend("Summarize commands run in this session")}
+          className="inline-flex items-center gap-1.5 bg-black hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-300 hover:text-white transition cursor-pointer whitespace-nowrap"
         >
-          <Terminal size={12} className="text-indigo-400" />
-          <span>Summarize Commands</span>
+          <Terminal size={11} className="text-emerald-400" />
+          <span>SUMMARIZE</span>
         </button>
         <button
-          onClick={() => handleSend("Did any errors occur?")}
-          className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/70 hover:border-amber-500/50 px-3 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white transition cursor-pointer whitespace-nowrap shadow-xs"
+          onClick={() => handleSend("Audit session for errors or non-zero exit codes")}
+          className="inline-flex items-center gap-1.5 bg-black hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-300 hover:text-white transition cursor-pointer whitespace-nowrap"
         >
-          <ShieldAlert size={12} className="text-amber-400" />
-          <span>Audit Errors</span>
+          <ShieldAlert size={11} className="text-amber-400" />
+          <span>AUDIT ERRORS</span>
         </button>
         <button
           onClick={() => handleSend("How do I fork this session locally?")}
-          className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/70 hover:border-emerald-500/50 px-3 py-1.5 rounded-lg text-[11px] text-slate-300 hover:text-white transition cursor-pointer whitespace-nowrap shadow-xs"
+          className="inline-flex items-center gap-1.5 bg-black hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-300 hover:text-white transition cursor-pointer whitespace-nowrap"
         >
-          <Play size={12} className="text-emerald-400" />
-          <span>Fork Subshell</span>
+          <Play size={11} className="text-emerald-400" />
+          <span>FORK COMMAND</span>
         </button>
       </div>
 
       {/* Messages Feed */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black">
         {messages.map((m) => (
           <div
             key={m.id}
-            className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}
+            className={`flex gap-2.5 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}
           >
             {/* Avatar */}
             <div
-              className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-white shadow-xs ${
+              className={`w-6 h-6 border flex items-center justify-center shrink-0 text-xs font-bold ${
                 m.role === "user"
-                  ? "bg-gradient-to-tr from-emerald-500 to-teal-600"
-                  : "bg-gradient-to-tr from-indigo-600 to-purple-600"
+                  ? "bg-white text-black border-white"
+                  : "bg-zinc-900 text-emerald-400 border-zinc-800"
               }`}
             >
-              {m.role === "user" ? <User size={14} /> : <Bot size={14} />}
+              {m.role === "user" ? <User size={12} /> : <Bot size={12} />}
             </div>
 
-            {/* Bubble */}
-            <div className={`space-y-2 max-w-[85%] ${m.role === "user" ? "items-end" : "items-start"}`}>
+            {/* Content Box */}
+            <div className={`space-y-1 max-w-[88%] ${m.role === "user" ? "items-end" : "items-start"}`}>
               <div
-                className={`p-3 rounded-2xl border leading-relaxed shadow-sm text-xs ${
+                className={`p-3 border leading-relaxed ${
                   m.role === "user"
-                    ? "bg-indigo-600 text-white border-indigo-500 rounded-tr-xs"
-                    : "bg-slate-900/90 text-slate-200 border-slate-800 rounded-tl-xs"
+                    ? "bg-zinc-900 text-white border-zinc-700"
+                    : "bg-zinc-950 text-zinc-200 border-zinc-800"
                 }`}
               >
                 {m.role === "user" ? (
                   <p className="whitespace-pre-wrap">{m.text}</p>
                 ) : (
-                  <div className="prose prose-invert max-w-none text-xs leading-relaxed space-y-2">
+                  <div className="text-xs leading-relaxed space-y-2">
                     <ReactMarkdown
                       components={{
-                        h1: ({ children }) => <h1 className="text-sm font-bold text-white border-b border-slate-800 pb-1 mt-2 mb-1">{children}</h1>,
-                        h2: ({ children }) => <h2 className="text-xs font-bold text-indigo-300 mt-2 mb-1">{children}</h2>,
-                        h3: ({ children }) => <h3 className="text-xs font-semibold text-slate-200 mt-1.5 mb-1">{children}</h3>,
-                        p: ({ children }) => <p className="mb-1.5 text-slate-200 leading-relaxed">{children}</p>,
-                        strong: ({ children }) => <strong className="font-semibold text-emerald-400">{children}</strong>,
-                        ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-1.5 pl-1 text-slate-300">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-1.5 pl-1 text-slate-300">{children}</ol>,
-                        li: ({ children }) => <li className="text-xs text-slate-300 leading-snug">{children}</li>,
+                        h1: ({ children }) => <h1 className="text-xs font-bold text-white border-b border-zinc-800 pb-1 mt-2 mb-1 uppercase tracking-wider">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-xs font-bold text-emerald-400 mt-2 mb-1 uppercase">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-xs font-bold text-zinc-300 mt-1 mb-1">{children}</h3>,
+                        p: ({ children }) => <p className="mb-1.5 text-zinc-300 leading-relaxed">{children}</p>,
+                        strong: ({ children }) => <strong className="font-bold text-emerald-400">{children}</strong>,
+                        ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-1 pl-1 text-zinc-300">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-1 pl-1 text-zinc-300">{children}</ol>,
+                        li: ({ children }) => <li className="text-xs text-zinc-300 leading-snug">{children}</li>,
                         code: ({ className, children, ...props }) => {
                           const isInline = !className;
                           return isInline ? (
-                            <code className="bg-slate-800 text-emerald-300 font-mono text-[11px] px-1.5 py-0.5 rounded border border-slate-700/60" {...props}>
+                            <code className="bg-zinc-900 text-emerald-400 font-mono text-[11px] px-1 py-0.5 border border-zinc-800" {...props}>
                               {children}
                             </code>
                           ) : (
-                            <div className="my-2 rounded-xl border border-slate-800 bg-slate-950 p-3 font-mono text-[11px] text-emerald-400 overflow-x-auto">
+                            <div className="my-2 border border-zinc-800 bg-zinc-950 p-2.5 font-mono text-[11px] text-emerald-400 overflow-x-auto">
                               <pre className="whitespace-pre-wrap leading-relaxed">{children}</pre>
                             </div>
                           );
@@ -246,24 +241,21 @@ export default function AICopilot() {
 
                 {/* Code Snippet Box */}
                 {m.codeSnippet && (
-                  <div className="mt-2.5 rounded-xl border border-slate-800 bg-slate-950 p-2.5 font-mono text-[11px] text-emerald-400 relative overflow-x-auto group">
-                    <div className="flex items-center justify-between mb-1 pb-1 border-b border-slate-800 text-[10px] text-slate-500 uppercase tracking-wider font-sans">
+                  <div className="mt-2 border border-zinc-800 bg-black p-2 font-mono text-[11px] text-emerald-400 overflow-x-auto">
+                    <div className="flex items-center justify-between mb-1 pb-1 border-b border-zinc-900 text-[10px] text-zinc-500 uppercase tracking-wider">
                       <span className="flex items-center gap-1">
-                        <TerminalSquare size={10} /> Terminal Code
+                        <TerminalSquare size={10} /> COMMAND
                       </span>
                       <button
                         onClick={() => handleCopyCode(m.id, m.codeSnippet!)}
                         className="hover:text-white transition cursor-pointer flex items-center gap-1"
                       >
                         {copiedId === m.id ? (
-                          <>
-                            <Check size={10} className="text-emerald-400" />
-                            <span className="text-emerald-400">Copied</span>
-                          </>
+                          <span className="text-emerald-400 font-bold">COPIED</span>
                         ) : (
                           <>
                             <Copy size={10} />
-                            <span>Copy</span>
+                            <span>COPY</span>
                           </>
                         )}
                       </button>
@@ -273,7 +265,7 @@ export default function AICopilot() {
                 )}
               </div>
 
-              <span className="text-[10px] text-slate-500 font-mono block px-1">
+              <span className="text-[9px] text-zinc-600 block uppercase">
                 {m.timestamp}
               </span>
             </div>
@@ -281,43 +273,40 @@ export default function AICopilot() {
         ))}
 
         {loading && (
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shrink-0">
-              <Bot size={14} />
-            </div>
-            <div className="p-3 rounded-2xl rounded-tl-xs bg-slate-900 border border-slate-800 text-slate-400 text-xs flex items-center gap-2">
-              <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-              <span>Analyzing telemetry timeline...</span>
-            </div>
+          <div className="flex gap-2 items-center text-zinc-500 text-[11px] pt-1">
+            <span className="w-2 h-2 bg-emerald-400 animate-pulse" />
+            <span>STREAMING RESPONSE...</span>
           </div>
         )}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Interactive Input Bar */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSend();
-        }}
-        className="p-3 border-t border-slate-800/80 bg-slate-900/60 backdrop-blur-md flex items-center gap-2 shrink-0"
-      >
-        <input
-          type="text"
-          placeholder="Ask AI Copilot about commands, errors, or PIDs..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition font-sans"
-        />
-        <button
-          type="submit"
-          disabled={loading || !input.trim()}
-          className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white p-2 rounded-xl cursor-pointer transition shadow-md shadow-indigo-600/20"
+      {/* Input Box */}
+      <div className="p-3 border-t border-zinc-800 bg-zinc-950">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSend();
+          }}
+          className="flex gap-2 items-center"
         >
-          <Send size={15} />
-        </button>
-      </form>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask AI Copilot about commands, errors..."
+            className="flex-1 bg-black border border-zinc-800 px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500 font-mono transition"
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || loading}
+            className="p-2 bg-white text-black hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer shrink-0"
+          >
+            <Send size={14} />
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

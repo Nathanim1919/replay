@@ -3,7 +3,7 @@
 set -e
 
 # Replay One-Line CLI Installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/Nathanim1919/replay/trunk/install.sh | bash
+# Usage: curl -fsSL https://cdn.jsdelivr.net/gh/Nathanim1919/replay@trunk/install.sh | bash
 
 REPO="Nathanim1919/replay"
 INSTALL_DIR="/usr/local/bin"

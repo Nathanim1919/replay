@@ -23,7 +23,7 @@ Replay captures terminal stdout/stdin events as compressed microsecond-indexed s
 ### 1. Install CLI
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Nathanim1919/replay/trunk/install.sh | bash
+curl -fsSL https://cdn.jsdelivr.net/gh/Nathanim1919/replay@trunk/install.sh | bash
 ```
 
 Or build from source (Go 1.22+ required):

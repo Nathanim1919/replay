@@ -15,6 +15,7 @@ interface PlayerProps {
 
 export const Player = ({ mode = "full", title = "replay session" }: PlayerProps) => {
   const {
+    rawContent,
     waveform,
     duration,
     play,
@@ -34,6 +35,52 @@ export const Player = ({ mode = "full", title = "replay session" }: PlayerProps)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
+
+  const handleExportCast = () => {
+    setShowExportMenu(false)
+    const toastId = toast.loading("Preparing asciinema .cast export...")
+
+    setTimeout(() => {
+      toast.loading("Processing ANSI frames & timing matrix...", { id: toastId })
+
+      setTimeout(() => {
+        const ok = exportToCast(rawContent || "", title)
+        if (ok) {
+          toast.success("Asciinema .cast file downloaded!", { id: toastId })
+        } else {
+          toast.error("Failed to generate .cast export.", { id: toastId })
+        }
+      }, 500)
+    }, 400)
+  }
+
+  const handleExportSvg = () => {
+    setShowExportMenu(false)
+    const toastId = toast.loading("Generating terminal SVG image...")
+
+    setTimeout(() => {
+      const ok = exportToSvg(title, ["$ replay record", "Session active...", `DIR: ${currentTelemetry?.cwd || "~"}`])
+      if (ok) {
+        toast.success("Terminal SVG image downloaded!", { id: toastId })
+      } else {
+        toast.error("Failed to generate SVG image.", { id: toastId })
+      }
+    }, 400)
+  }
+
+  const handleExportRaw = () => {
+    setShowExportMenu(false)
+    const toastId = toast.loading("Packaging raw .replay stream...")
+
+    setTimeout(() => {
+      const ok = exportRawReplay(rawContent || "", title)
+      if (ok) {
+        toast.success("Raw .replay session downloaded!", { id: toastId })
+      } else {
+        toast.error("Failed to download .replay stream.", { id: toastId })
+      }
+    }, 400)
+  }
 
   const enterFullscreen = useCallback(() => {
     containerRef.current?.requestFullscreen?.()
@@ -172,29 +219,29 @@ export const Player = ({ mode = "full", title = "replay session" }: PlayerProps)
             </button>
 
             {showExportMenu && (
-              <div className="absolute right-0 top-full mt-1.5 w-48 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-50 py-1 font-mono text-xs text-zinc-300 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute right-0 top-full mt-1.5 w-52 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-50 py-1 font-mono text-xs text-zinc-300 animate-in fade-in zoom-in-95 duration-150">
                 <button
-                  onClick={() => {
-                    setShowExportMenu(false)
-                    // Export SVG frame
-                    exportToSvg(title, ["$ replay record", "Session output..."])
-                    toast.success("Exported terminal SVG preview!")
-                  }}
-                  className="w-full px-3 py-2 text-left hover:bg-zinc-800 hover:text-white flex items-center gap-2 cursor-pointer"
-                >
-                  <ImageIcon size={13} className="text-emerald-400" />
-                  <span>Download SVG Image</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowExportMenu(false)
-                    toast.info("Preparing asciinema .cast download...")
-                  }}
+                  onClick={handleExportCast}
                   className="w-full px-3 py-2 text-left hover:bg-zinc-800 hover:text-white flex items-center gap-2 cursor-pointer"
                 >
                   <FileText size={13} className="text-amber-400" />
-                  <span>Download .cast File</span>
+                  <span>Download .cast (Asciinema)</span>
+                </button>
+
+                <button
+                  onClick={handleExportSvg}
+                  className="w-full px-3 py-2 text-left hover:bg-zinc-800 hover:text-white flex items-center gap-2 cursor-pointer"
+                >
+                  <ImageIcon size={13} className="text-emerald-400" />
+                  <span>Download SVG Frame</span>
+                </button>
+
+                <button
+                  onClick={handleExportRaw}
+                  className="w-full px-3 py-2 text-left hover:bg-zinc-800 hover:text-white flex items-center gap-2 cursor-pointer"
+                >
+                  <Download size={13} className="text-cyan-400" />
+                  <span>Download Raw .replay</span>
                 </button>
               </div>
             )}

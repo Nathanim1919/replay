@@ -6,6 +6,5 @@ node_modules
 *.replay
 /replay
 /server
-.env
 .env*.local
 *.env

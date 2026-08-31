@@ -40,9 +40,9 @@ esac
 
 echo "🚀 Downloading Replay CLI for ${OS}/${ARCH}..."
 
-LATEST_TAG=$(curl -sSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+LATEST_TAG=$(curl -sSL -o /dev/null -w "%{url_effective}" "https://github.com/${REPO}/releases/latest" | sed 's|.*/tag/||')
 
-if [ -z "$LATEST_TAG" ]; then
+if [ -z "$LATEST_TAG" ] || [ "$LATEST_TAG" = "https://github.com/${REPO}/releases/latest" ]; then
   LATEST_TAG="v1.0.0"
 fi
 

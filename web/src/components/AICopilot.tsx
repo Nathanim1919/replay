@@ -65,7 +65,7 @@ export default function AICopilot() {
 
     setMessages((prev) => [...prev, initialAssistantMsg]);
 
-    const contextPayload = `Time: ${currentTime}s | PWD: ${currentTelemetry?.cwd || "/"} | Command: ${currentTelemetry?.command || "none"}`;
+    const contextPayload = `Time: ${currentTime}s | PWD: ${currentTelemetry?.cwd || "/"} | Command: ${currentTelemetry?.cmd || "none"}`;
 
     try {
       const response = await fetchWithAuth("/api/copilot", {

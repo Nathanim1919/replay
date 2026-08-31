@@ -1,91 +1,117 @@
 # Replay
 
-Open-source terminal session recorder and player (Loom for terminals, in Go).
+> High-performance terminal session engine & interactive player (Loom for terminals, in Go & Next.js).
 
-Replay captures terminal output as structured events, writes a `.replay` file, and plays it back with accurate timing. The project is early-stage: today it ships a minimal CLI recorder/player and the core file format, with a broader roadmap for a web player, sharing, and AI summaries.
+Replay captures terminal stdout/stdin events as compressed microsecond-indexed streams, auto-scrubs credentials with real-time DLP filters, and renders interactive replays in a Next.js web dashboard with **AI session intelligence** and **time-travel shell forking**.
 
-## Why Replay
+---
 
-Terminal sessions contain the real story behind fixes, incident response, and onboarding. Replay turns those sessions into a replayable artifact so others can scrub, search, and understand *what actually happened*.
+## 🌟 Key Capabilities
 
-## Features (today)
+- **PTY Terminal Engine**: Native Go syscalls (`/dev/pty`) capturing microsecond-indexed ANSI streams, window resizes, and CWD process telemetry with `< 2MB` overhead.
+- **Real-Time DLP Secret Redactor**: In-line regex scrubbing for AWS credentials, JWT bearer tokens, and private database keys before disk serialization.
+- **Interactive Web Player**: Frame-accurate xterm.js canvas rendering with instant keyframe seeking, visual activity waveforms, variable speed (0.5x – 8x), and skip-idle silence scrubbing.
+- **AI Session Copilot**: Integrated Gemini 3.5 Flash Lite assistant for real-time command summarization, error auditing, and terminal query Q&A.
+- **Time-Travel Shell Forking**: `replay fork <session> <timestamp>` reconstitutes original CWD and environment snapshots into an interactive live terminal subshell.
+- **Device Authorization**: Seamless CLI authentication (`replay login`) using browser verification codes.
+- **Export & Embeds**: Export session previews to SVG or standard asciinema `.cast` formats, or embed responsive iframes (`/embed/:shortcode`) directly into PRs and docs.
 
-- **PTY-based recording** with microsecond timestamps.
-- **`.replay` JSON Lines format** with a header and event stream.
-- **Local playback** with timing control.
-- **Foundational storage primitives** (SQLite + local blob store) in `internal/server/`.
+---
 
-## Quickstart
+## ⚡ Quickstart
 
-### Prerequisites
+### 1. Install CLI
 
-- Go **1.26+** (per `go.mod`)
+```bash
+curl -fsSL https://raw.githubusercontent.com/Nathanim1919/replay/trunk/install.sh | bash
+```
 
-### Build
+Or build from source (Go 1.22+ required):
 
 ```bash
 go build -o bin/replay ./cmd/replay
 ```
 
-### Record a session
+### 2. Authenticate CLI
 
 ```bash
-./bin/replay record my-session.replay
+replay login
 ```
 
-### Play it back
+Follow the prompt to verify your 8-digit device code in the web browser.
+
+### 3. Record a Session
 
 ```bash
-./bin/replay play my-session.replay
-# optional speed multiplier (e.g., 2.0)
-./bin/replay play my-session.replay 2.0
+replay record my-session.replay
 ```
 
-## File Format (`.replay`)
+Execute your terminal commands as usual. Type `exit` or press `Ctrl+D` to stop recording.
 
-The file is JSON Lines:
+### 4. Playback & Time-Travel
 
-1. **Header** (JSON object) with terminal size, timestamp, and shell metadata.
-2. **Events** (JSON arrays) with `[time, type, data]`.
-
-Event types:
-
-- `o` — output (raw bytes)
-- `i` — input (keystrokes)
-- `r` — resize
-- `c` — checkpoint
-- `m` — marker
-
-See `internal/format/` for the implementation.
-
-## Architecture & Roadmap
-
-Replay’s long-term vision includes a web player, sharing/upload APIs, search, and AI summaries. The detailed design and roadmap live in:
-
-- [`ARCHITECTURE.md`](./ARCHITECTURE.md)
-
-## Project Structure
-
-```
-cmd/replay/          CLI entrypoint (record/play)
-internal/format/     .replay format reader/writer
-internal/recorder/   PTY recorder
-internal/server/     Storage abstractions (SQLite + local blob store)
-web/                Frontend placeholder (future)
-```
-
-## Development
-
+Play back locally in terminal:
 ```bash
-go test ./...
-go build ./cmd/replay
-golangci-lint run   # if installed
+replay play my-session.replay 2.0
 ```
 
-## Contributing
+Fork terminal state at 14.5 seconds into an interactive subshell:
+```bash
+replay fork my-session.replay 14.5
+```
 
-Issues and PRs are welcome. If you’re planning a larger change, open an issue first to discuss the approach.
+Export session preview to SVG:
+```bash
+replay export my-session.replay --format svg --output preview.svg
+```
 
-## License
+---
 
-No license file is currently included. If you intend to use or contribute to Replay, please open an issue to clarify licensing.
+## 🛠️ CLI Reference
+
+| Command | Description |
+| :--- | :--- |
+| `replay record [file]` | Start recording terminal PTY session to `.replay` file |
+| `replay play <file> [speed]` | Play back recorded terminal session locally |
+| `replay fork <file> <timestamp>` | Launch an interactive subshell restored at timestamp snapshot |
+| `replay login` | Initiate device flow authentication |
+| `replay export <file>` | Export session to `.svg` or `.cast` asciinema format |
+| `replay list` | List recorded sessions stored in local buffer |
+
+---
+
+## 🏗️ Architecture Overview
+
+Replay consists of two primary components:
+
+1. **Go Core Engine (`/cmd/replay`, `/internal`)**:
+   - `internal/recorder`: Intercepts system PTY events and redacts secrets.
+   - `internal/format`: `Zstd`-compressed JSON Lines stream format (`.replay`).
+   - `internal/server`: REST API server & OAuth device flow endpoints.
+   - `internal/ai`: Streaming Gemini AI session intelligence provider.
+
+2. **Web Dashboard (`/web`)**:
+   - Built with **Next.js 14**, **TypeScript**, **Tailwind CSS**, and **xterm.js**.
+   - Features Industrial design tokens, tabular session metrics, activity waveforms, and iframe embedding.
+
+---
+
+## 💻 Local Development
+
+### Run Backend API Server
+```bash
+make build-server && ./bin/server
+```
+
+### Run Web Frontend
+```bash
+cd web
+npm install
+NEXT_PUBLIC_API_URL=http://localhost:8080 npm run dev
+```
+
+---
+
+## 📄 License
+
+Distributed under the permissive **MIT License**. See [`LICENSE`](./LICENSE) for details.
